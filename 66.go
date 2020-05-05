@@ -1,7 +1,7 @@
 package main
 
 func plusOne(digits []int) []int {
-	result := make([]int, len(digits))
+	result := make([]int, len(digits) + 1)
 	value := 1
 	for a := len(digits) - 1; a >= 0; a-- {
 		if value == 1 {
@@ -9,12 +9,12 @@ func plusOne(digits []int) []int {
 			value = digits[a] / 10
 			digits[a] = digits[a] % 10
 		}
-		result[a] = digits[a]
+		result[a+1] = digits[a]
 	}
-	if result[0] == 0 {
-		a := []int{1}
-		return append(a,result ...)
+	if result[1] == 0 {
+		result[0] = 1
+		return result
 	}
-	return result
+	return result[1:]
 }
 
