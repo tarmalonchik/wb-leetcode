@@ -1,4 +1,4 @@
-package reverse
+package main
 
 func reverse(x int) int {
 	result := 0
