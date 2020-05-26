@@ -1,86 +1,47 @@
 package main
 
 func myAtoi(str string) int {
-	var result int32
-	for i,_ := range str{
-		if str[i] == 32 {
+	var result uint32
+	for i,_ := range str {
+		if str[i] == ' '{
 			continue
 		}
-		if str[i] == 45  {
-			if len(str[i+1:]) > 0 && str[i+1] >=48 && str[i+1] <= 57 {
-				result = -int32(str[i+1] - 48)
-				if len(str[i+2:]) > 0{
-					for _, value := range str[i+2:]{
-						if value >= 48 && value <= 57{
-							prev := result
-							result *= 10
-							if result/10 != prev{
-								return -2147483648
-							}
-							prevv := result
-							result -= int32(value - 48)
-							if result > prevv{
-								return -2147483648
-							}
-							continue
-						}
-						break
-					}
-					return int(result)
-				}
-				return int(result)
+		if str[i] == '+' || str[i] == '-' || (str[i] >= '0' && str[i] <= '9'){
+			var sign int16
+			if str[i] == '+'{
+				sign = 10
+			}else if str[i] == '-'{
+				sign = 11
 			}
-		}
-		if str[i] == 43  {
-			if len(str[i+1:]) > 0 && str[i+1] >=48 && str[i+1] <= 57 {
-				result = int32(str[i+1] - 48)
-				if len(str[i+2:]) > 0{
-					for _, value := range str[i+2:]{
-						if value >= 48 && value <= 57{
-							prev := result
-							result *= 10
-							if result/10 != prev{
-								return 2147483647
-							}
-							prevv := result
-							result += int32(value - 48)
-							if result < prevv{
-								return 2147483647
-							}
-							continue
-						}
-						break
-					}
-					return int(result)
-				}
-				return int(result)
-			}
-		}
-		if str[i] >= 48 && str[i] <= 57{
-			result = int32(str[i] - 48)
-			if len(str[i+1:]) > 0 {
-				for _, value := range str[i+1:]{
-					if value >= 48 && value <= 57{
-						prev := result
-						result *= 10
-						if result /10 != prev{
+			var bitMask uint32
+			bitMask = 2147483648
+			var flag bool
+			for _, value := range str[i + int(sign/10):]{
+				if value >= '0' && value <= '9'{
+					result *= 10
+					result += uint32(value - '0')
+					if flag || ((result & bitMask) != 0) {
+						if sign == 11 {
+							return -2147483648
+						}else{
 							return 2147483647
 						}
-						prevv := result
-						result += int32(value - 48)
-						if result < prevv{
-							return 2147483647
-						}
-						continue
 					}
+					if !flag {
+						if result > 429496729{
+							flag = true
+						}
+					}
+				}else{
 					break
 				}
-				return int(result)
+			}
+			if sign == 11 {
+				return -int(result)
 			}
 			return int(result)
 		}
-		break
+		return 0
 	}
 	return 0
 }
-
