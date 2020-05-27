@@ -3,7 +3,7 @@ package main
 func myAtoi(str string) int {
 	var result uint32
 	for i,_ := range str {
-		if str[i] == ' '{
+		if str[i] == ' ' {
 			continue
 		}
 		if str[i] == '+' || str[i] == '-' || (str[i] >= '0' && str[i] <= '9'){
