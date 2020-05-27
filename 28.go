@@ -1,5 +1,6 @@
 package main
 
+
 func strStr(haystack string, needle string) int {
 	if len(needle) > len(haystack){
 		return -1
