@@ -20,7 +20,7 @@ func isPalindrome(x int) bool {
 			x /=10
 			bit /= 100
 		}else{
-			return false
+			return  false
 		}
 	}
 	return true
