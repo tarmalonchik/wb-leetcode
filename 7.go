@@ -6,7 +6,7 @@ func reverse(x int) int {
 		if x/10 == 0 {
 			answer := result*10 + x
 			if answer > 2147483647 || answer < -2147483648 {
-				return  0
+				return 0
 			}
 			return answer
 		}

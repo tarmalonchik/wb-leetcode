@@ -5,7 +5,7 @@ type ListNode struct {
 	Next *ListNode
 }
 
-func addTwoNumbers( l1 *ListNode, l2 *ListNode) *ListNode {
+func addTwoNumbers(l1 *ListNode, l2 *ListNode) *ListNode {
 	flag := 0
 	if l1 != nil || l2 != nil {
 		firstNode := &ListNode{
@@ -47,7 +47,7 @@ func addTwoNumbers( l1 *ListNode, l2 *ListNode) *ListNode {
 					flag = 1
 					curr.Val %= 10
 				}
-				
+
 				if flag == 1 || curr1 != nil || curr2 != nil {
 					curr.Next = &ListNode{}
 				}

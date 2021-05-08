@@ -1,10 +1,10 @@
 package main
 
-func isPalindromeString(s string) bool{
+func isPalindromeString(s string) bool {
 	i := 0
-	j := len(s)-1
-	for ; i <= j ;{
-		if s[i] != s[j]{
+	j := len(s) - 1
+	for i <= j {
+		if s[i] != s[j] {
 			return false
 		}
 		i++
@@ -14,18 +14,18 @@ func isPalindromeString(s string) bool{
 }
 
 func longestPalindrome(s string) string {
-	second := len(s)-1
-	for ; second > 0; {
+	second := len(s) - 1
+	for second > 0 {
 		first := 0
 		item := second
-		for ; item <= len(s) -1 ; {
-			if isPalindromeString(s[first:item+1]){
-				return s[first:item+1]
+		for item <= len(s)-1 {
+			if isPalindromeString(s[first : item+1]) {
+				return s[first : item+1]
 			}
-			first ++
-			item ++
+			first++
+			item++
 		}
-		second --
+		second--
 	}
-	return s[0:second+1]
+	return s[0 : second+1]
 }

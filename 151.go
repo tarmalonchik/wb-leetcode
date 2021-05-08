@@ -22,10 +22,10 @@ func reverseWords(s string) string {
 			flag = false
 		}
 	}
-	if s[0] != ' '{
+	if s[0] != ' ' {
 		return str + s[:num+1]
 	}
-	if len(str) > 0{
+	if len(str) > 0 {
 		return str[:len(str)-1]
 	}
 	return ""
