@@ -1,8 +1,8 @@
 package main
 
 func searchInsert(nums []int, target int) int {
-	for i := range nums{
-		if target <= nums[i]{
+	for i := range nums {
+		if target <= nums[i] {
 			return i
 		}
 	}
