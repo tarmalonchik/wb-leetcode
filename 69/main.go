@@ -1,13 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
-func main() {
-	fmt.Println(mySqrt(625))
-}
-
 func mySqrt(x int) int {
 	if x == 1 {
 		return x
