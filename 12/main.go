@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -63,10 +62,6 @@ var list = []romans{
 		num:   1,
 		roman: "I",
 	},
-}
-
-func main() {
-	fmt.Println(intToRoman(14))
 }
 
 func intToRoman(num int) string {
