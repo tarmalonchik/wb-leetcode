@@ -22,8 +22,8 @@ func rotate(matrix [][]int) {
 		return
 	}
 	for j := range matrix {
-		for i := range matrix[j] {
-			if i == len(matrix)-1 {
+		for i := 0 + j; i < len(matrix)-j; i++ {
+			if i == len(matrix)-1-j {
 				break
 			}
 			first := matrix[0][i]
@@ -33,10 +33,9 @@ func rotate(matrix [][]int) {
 			matrix[i][len(matrix)-1] = first
 		}
 		if j+1 >= len(matrix)/2 {
-
+			return
 		}
 	}
-
 }
 
 func printMx(in [][]int) {
