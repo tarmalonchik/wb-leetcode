@@ -133,6 +133,24 @@ func TestIsMatch(t *testing.T) {
 			pattern: "b*a*a*.c*bb*b*.*.*",
 			match:   true,
 		},
+		{
+			name:    "21",
+			value:   "ccccacaaccaaaaabac",
+			pattern: "..c*b*c*a*b*ba.*",
+			match:   false,
+		},
+		{
+			name:    "22",
+			value:   "aaa",
+			pattern: "ab*a",
+			match:   false,
+		},
+		{
+			name:    "23",
+			value:   "aaa",
+			pattern: "ab*ac*a",
+			match:   true,
+		},
 	} {
 		t.Run(tCase.name, func(t *testing.T) {
 			a := assert.New(t)

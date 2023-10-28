@@ -10,7 +10,7 @@ const (
 )
 
 func main() {
-	fmt.Println(isMatch("bbcacbabbcbaaccabc", "b*a*a*.c*bb*b*.*.*"))
+	fmt.Println(isMatch("acaabbaccbbacaabbbb", "a*.*b*.*a*aa*a*"))
 }
 
 func isMatch(s string, p string) bool {
@@ -24,30 +24,30 @@ func isMatch(s string, p string) bool {
 
 	if tokenOne.one {
 		var val *bool
-		tokenOne, tokenTwo, val = moveLeftSide(s, tokenOne, tokenTwo, &posOne, &posTwo, nil, nil)
+		tokenOne, tokenTwo, val = moveLeftSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
 		if val != nil {
 			return *val
 		}
 	}
-
 	if tokenTwo.one {
 		var val *bool
-		tokenOne, tokenTwo, val = moveRightSide(s, tokenOne, tokenTwo, &posOne, &posTwo, nil, nil)
+		tokenOne, tokenTwo, val = moveRightSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
 		if val != nil {
 			return *val
 		}
 	}
-
 	return internalMatcher(s[posOne:posTwo+1], tokenOne, tokenTwo)
 }
 
 func internalMatcher(s string, tokenOne, tokenTwo *token) bool {
+	fmt.Println(printReg(tokenOne), tokenTwo.stringValue(), s)
+
 	if s == "" {
 		return tokensAreBallast(tokenOne, tokenTwo)
 	}
 
 	if tokenOne == tokenTwo {
-		return matchSqueeze(tokenOne, s, &tokenOne.prev.value, &tokenOne.next.value)
+		return matchSqueeze(tokenOne, s, tokenOne.prev.getSymbol(), tokenOne.next.getSymbol())
 	}
 	if tokenOne.next == tokenTwo {
 		var symbol = tokenOne.value
@@ -69,50 +69,54 @@ func internalMatcher(s string, tokenOne, tokenTwo *token) bool {
 	tokenTwo = tokenTwo.prev
 
 	if tokenOne == tokenTwo {
-		return matchSqueeze(tokenOne, s, &tokenOne.prev.value, &tokenOne.next.value)
+		return matchSqueeze(tokenOne, s, tokenOne.prev.getSymbol(), tokenOne.next.getSymbol())
 	}
 
 	posOne, posTwo := 0, len(s)-1
 	var val *bool
-	tokenOne, tokenTwo, val = moveLeftSide(s, tokenOne, tokenTwo, &posOne, &posTwo, &tokenOne.prev.value, &tokenTwo.next.value)
+	tokenOne, tokenTwo, val = moveLeftSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
 	if val != nil {
 		return *val
 	}
 
-	tokenOne, tokenTwo, val = moveRightSide(s, tokenOne, tokenTwo, &posOne, &posTwo, &tokenOne.next.value, &tokenTwo.next.value)
+	tokenOne, tokenTwo, val = moveRightSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
 	if val != nil {
 		return *val
 	}
 	return internalMatcher(s[posOne:posTwo+1], tokenOne, tokenTwo)
 }
 
-func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int, matchLeft, matchRight *uint8) (*token, *token, *bool) {
-	var (
-		matchLeftInternal  *uint8
-		matchRightInternal *uint8
-		rightWasApplied    bool
-	)
-	matchLeftInternal = copyPointerData(matchLeft)
+func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int) (*token, *token, *bool) {
+	prevToken := firstToken.prev
+	nextToken := lastToken.next
+
+	var rightWasApplied bool
 
 	for {
+		if *posFirst > *posLast {
+			val := tokensAreBallast(firstToken, lastToken)
+			return nil, nil, &val
+		}
+
 		if !firstToken.one {
-			if matchLeftInternal == nil {
+			if firstToken.prev.getSymbol() == nil {
 				break
 			}
 			if firstToken.value == anySymbol {
 				break
 			}
-			if firstToken.value == *matchLeftInternal {
+			if firstToken.value == *firstToken.prev.getSymbol() {
 				break
 			}
 			for {
 				if *posFirst > *posLast {
-					break
+					val := tokensAreBallast(firstToken, lastToken)
+					return nil, nil, &val
 				}
 				if equal(s[*posFirst], firstToken.value) {
 					break
 				}
-				if equal(s[*posFirst], *matchLeftInternal) {
+				if equal(s[*posFirst], *firstToken.prev.getSymbol()) {
 					*posFirst++
 				} else {
 					break
@@ -122,10 +126,9 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 		}
 
 		if equal(s[*posFirst], firstToken.value) && !rightWasApplied {
-			if matchLeftInternal != nil && !equal(s[*posFirst], *matchLeftInternal) {
-				matchLeftInternal = nil
+			if prevToken.getSymbol() != nil && !equal(s[*posFirst], *prevToken.getSymbol()) {
+				prevToken = nil
 			}
-			matchRightInternal = copyPointerData(matchRight)
 
 			if firstToken.one {
 				firstToken = firstToken.next
@@ -140,19 +143,19 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 
 			if firstToken == lastToken {
 				val := false
-				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], nil, matchRightInternal)
+				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], nil, nextToken.getSymbol())
 				return nil, nil, &val
 			}
 		} else {
-			if matchLeftInternal != nil {
-				if equal(s[*posFirst], *matchLeftInternal) {
+			if prevToken.getSymbol() != nil {
+				if equal(s[*posFirst], *prevToken.getSymbol()) {
 					*posFirst++
 					continue
 				}
 			}
-			if matchRightInternal != nil {
+			if nextToken.getSymbol() != nil {
 				rightWasApplied = true
-				if equal(s[*posFirst], *matchRightInternal) {
+				if equal(s[*posFirst], *nextToken.getSymbol()) {
 					*posFirst++
 					continue
 				}
@@ -164,33 +167,39 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 	return firstToken, lastToken, nil
 }
 
-func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *int, matchLeft, matchRight *uint8) (*token, *token, *bool) {
+func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *int) (*token, *token, *bool) {
+	prevToken := firstToken.prev
+	nextToken := lastToken.next
+
 	var (
-		matchLeftInternal  *uint8
-		matchRightInternal *uint8
-		leftWasApplied     bool
+		leftWasApplied bool
 	)
-	matchRightInternal = copyPointerData(matchRight)
 
 	for {
+		if *posFirst > *posLast {
+			val := tokensAreBallast(firstToken, lastToken)
+			return nil, nil, &val
+		}
+
 		if !lastToken.one {
-			if matchRightInternal == nil {
+			if lastToken.next.getSymbol() == nil {
 				break
 			}
 			if lastToken.value == anySymbol {
 				break
 			}
-			if lastToken.value == *matchRightInternal {
+			if lastToken.value == *lastToken.next.getSymbol() {
 				break
 			}
 			for {
 				if *posFirst > *posLast {
-					break
+					val := tokensAreBallast(firstToken, lastToken)
+					return nil, nil, &val
 				}
 				if equal(s[*posLast], lastToken.value) {
 					break
 				}
-				if equal(s[*posLast], *matchRightInternal) {
+				if equal(s[*posLast], *lastToken.next.getSymbol()) {
 					*posLast--
 				} else {
 					break
@@ -200,10 +209,9 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 		}
 
 		if equal(s[*posLast], lastToken.value) && !leftWasApplied {
-			if matchRightInternal != nil && !equal(s[*posLast], *matchRightInternal) {
-				matchRightInternal = nil
+			if nextToken.getSymbol() != nil && !equal(s[*posLast], *nextToken.getSymbol()) {
+				nextToken = nil
 			}
-			matchLeftInternal = copyPointerData(matchLeft)
 
 			if lastToken.one {
 				lastToken = lastToken.prev
@@ -218,20 +226,20 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 
 			if firstToken == lastToken {
 				val := false
-				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], matchLeftInternal, nil)
+				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], prevToken.getSymbol(), nil)
 				return nil, nil, &val
 			}
 		} else {
-			if matchRightInternal != nil {
-				if equal(s[*posLast], *matchRightInternal) {
+			if nextToken.getSymbol() != nil {
+				if equal(s[*posLast], *nextToken.getSymbol()) {
 					*posLast--
 					continue
 				}
 			}
 
-			if matchLeftInternal != nil {
+			if prevToken.getSymbol() != nil {
 				leftWasApplied = true
-				if equal(s[*posLast], *matchLeftInternal) {
+				if equal(s[*posLast], *prevToken.getSymbol()) {
 					*posLast--
 					continue
 				}
@@ -242,15 +250,6 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 		}
 	}
 	return firstToken, lastToken, nil
-}
-
-func copyPointerData(in *uint8) (out *uint8) {
-	if in == nil {
-		return out
-	}
-	outData := *in
-	out = &outData
-	return out
 }
 
 func tokensAreBallast(firstToken, lastToken *token) bool {
@@ -403,6 +402,16 @@ type token struct {
 	value uint8
 	prev  *token
 	next  *token
+}
+
+func (t *token) getSymbol() *uint8 {
+	if t == nil {
+		return nil
+	}
+	if t.one {
+		return nil
+	}
+	return &t.value
 }
 
 func printReg(tokenOne *token) (resp string) {
