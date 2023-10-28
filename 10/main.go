@@ -62,9 +62,10 @@ func internalMatcher(s string, tokenOne, tokenTwo *token) bool {
 		}
 		return true
 	}
-
 	tokenOne = tokenOne.next
 	tokenTwo = tokenTwo.prev
+	tokenTwo = stealNextValue(tokenTwo)
+	tokenOne = stealPrevValue(tokenOne)
 
 	if tokenOne == tokenTwo {
 		return matchSqueeze(tokenOne, s, tokenOne.prev.getSymbol(), tokenOne.next.getSymbol())
@@ -76,6 +77,7 @@ func internalMatcher(s string, tokenOne, tokenTwo *token) bool {
 	if val != nil {
 		return *val
 	}
+
 	tokenOne, tokenTwo, val = moveRightSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
 	if val != nil {
 		return *val
@@ -84,10 +86,8 @@ func internalMatcher(s string, tokenOne, tokenTwo *token) bool {
 }
 
 func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int) (*token, *token, *bool) {
-	prevToken := firstToken.prev
-	nextToken := lastToken.next
-
-	var rightWasApplied bool
+	startPosition := copyToken(firstToken.prev)
+	allowRestart := true
 
 	for {
 		if *posFirst > *posLast {
@@ -95,42 +95,17 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 			return nil, nil, &val
 		}
 
-		if !firstToken.one {
-			if firstToken.prev.getSymbol() == nil {
-				break
-			}
-			if firstToken.value == anySymbol {
-				break
-			}
-			if firstToken.value == *firstToken.prev.getSymbol() {
-				break
-			}
-			for {
-				if *posFirst > *posLast {
-					val := tokensAreBallast(firstToken, lastToken)
-					return nil, nil, &val
-				}
-				if equal(s[*posFirst], firstToken.value) {
-					break
-				}
-				if equal(s[*posFirst], *firstToken.prev.getSymbol()) {
-					*posFirst++
-				} else {
-					break
-				}
-			}
-			break
+		if startPosition == nil || !equal(s[*posFirst], startPosition.value) {
+			allowRestart = false
 		}
 
-		if equal(s[*posFirst], firstToken.value) && !rightWasApplied {
-			if prevToken.getSymbol() != nil && !equal(s[*posFirst], *prevToken.getSymbol()) {
-				prevToken = nil
-			}
+		if !firstToken.one {
+			break
+		}
+		if equal(s[*posFirst], firstToken.value) {
+			firstToken = stealPrevMatcher(firstToken)
 
-			if firstToken.one {
-				firstToken = firstToken.next
-			}
-
+			firstToken = firstToken.next
 			*posFirst++
 
 			if *posFirst > *posLast {
@@ -140,22 +115,13 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 
 			if firstToken == lastToken {
 				val := false
-				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], prevToken.getSymbol(), nextToken.getSymbol())
+				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], firstToken.prev.getSymbol(), firstToken.next.getSymbol())
 				return nil, nil, &val
 			}
 		} else {
-			if prevToken.getSymbol() != nil {
-				if equal(s[*posFirst], *prevToken.getSymbol()) {
-					*posFirst++
-					continue
-				}
-			}
-			if nextToken.getSymbol() != nil {
-				rightWasApplied = true
-				if equal(s[*posFirst], *nextToken.getSymbol()) {
-					*posFirst++
-					continue
-				}
+			if allowRestart {
+				*posFirst++
+				continue
 			}
 			val := false
 			return nil, nil, &val
@@ -165,12 +131,8 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 }
 
 func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *int) (*token, *token, *bool) {
-	prevToken := firstToken.prev
-	nextToken := lastToken.next
-
-	var (
-		leftWasApplied bool
-	)
+	endPosition := copyToken(lastToken.next)
+	allowRestart := true
 
 	for {
 		if *posFirst > *posLast {
@@ -178,42 +140,17 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 			return nil, nil, &val
 		}
 
-		if !lastToken.one {
-			if lastToken.next.getSymbol() == nil {
-				break
-			}
-			if lastToken.value == anySymbol {
-				break
-			}
-			if lastToken.value == *lastToken.next.getSymbol() {
-				break
-			}
-			for {
-				if *posFirst > *posLast {
-					val := tokensAreBallast(firstToken, lastToken)
-					return nil, nil, &val
-				}
-				if equal(s[*posLast], lastToken.value) {
-					break
-				}
-				if equal(s[*posLast], *lastToken.next.getSymbol()) {
-					*posLast--
-				} else {
-					break
-				}
-			}
-			break
+		if endPosition == nil || !equal(s[*posLast], endPosition.value) {
+			allowRestart = false
 		}
 
-		if equal(s[*posLast], lastToken.value) && !leftWasApplied {
-			if nextToken.getSymbol() != nil && !equal(s[*posLast], *nextToken.getSymbol()) {
-				nextToken = nil
-			}
+		if !lastToken.one {
+			break
+		}
+		if equal(s[*posLast], lastToken.value) {
+			lastToken = stealNextMatcher(lastToken)
 
-			if lastToken.one {
-				lastToken = lastToken.prev
-			}
-
+			lastToken = lastToken.prev
 			*posLast--
 
 			if *posFirst > *posLast {
@@ -223,30 +160,69 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 
 			if firstToken == lastToken {
 				val := false
-				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], prevToken.getSymbol(), nextToken.getSymbol())
+				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], firstToken.prev.getSymbol(), firstToken.next.getSymbol())
 				return nil, nil, &val
 			}
 		} else {
-			if nextToken.getSymbol() != nil {
-				if equal(s[*posLast], *nextToken.getSymbol()) {
-					*posLast--
-					continue
-				}
+			if allowRestart {
+				*posLast--
+				continue
 			}
-
-			if prevToken.getSymbol() != nil {
-				leftWasApplied = true
-				if equal(s[*posLast], *prevToken.getSymbol()) {
-					*posLast--
-					continue
-				}
-			}
-
 			val := false
 			return nil, nil, &val
 		}
 	}
 	return firstToken, lastToken, nil
+}
+
+func stealNextValue(token *token) *token {
+	if token.next.getSymbol() != nil && !token.one {
+		if *token.next.getSymbol() == anySymbol {
+			token.value = anySymbol
+		}
+	}
+	return token
+}
+
+func stealPrevValue(token *token) *token {
+	if token.prev.getSymbol() != nil && !token.one {
+		if *token.prev.getSymbol() == anySymbol {
+			token.value = anySymbol
+		}
+	}
+	return token
+}
+
+func stealNextMatcher(token *token) *token {
+	if token.next == nil {
+		return token
+	}
+	if !token.next.one {
+		if token.next.value == anySymbol {
+			token.value = anySymbol
+			token.one = false
+		}
+		if token.next.value == token.value {
+			token.one = false
+		}
+	}
+	return token
+}
+
+func stealPrevMatcher(token *token) *token {
+	if token.prev == nil {
+		return token
+	}
+	if !token.prev.one {
+		if token.prev.value == anySymbol {
+			token.value = anySymbol
+			token.one = false
+		}
+		if token.prev.value == token.value {
+			token.one = false
+		}
+	}
+	return token
 }
 
 func tokensAreBallast(firstToken, lastToken *token) bool {
@@ -338,12 +314,14 @@ func matchSqueeze(token *token, in string, leftSqueeze, rightSqueeze *uint8) boo
 				break
 			}
 			if !findSymbolInString(in[first:last+1], token.value) {
+				match = false
 				break
 			}
 			match = true
 			break
 		}
 	}
+
 	if !meet && match {
 		return true
 	}
@@ -423,5 +401,17 @@ func printReg(tokenOne *token) (resp string) {
 		}
 		resp += string(tokenCopy.value) + symbol
 		tokenCopy = tokenCopy.next
+	}
+}
+
+func copyToken(in *token) *token {
+	if in == nil {
+		return nil
+	}
+	return &token{
+		one:   in.one,
+		value: in.value,
+		prev:  in.prev,
+		next:  in.next,
 	}
 }
