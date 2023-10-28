@@ -38,64 +38,58 @@ func TestIsMatch(t *testing.T) {
 			match:   true,
 		},
 		{
-			name:    "4",
+			name:    "5",
 			value:   "a",
 			pattern: "b",
 			match:   false,
 		},
 		{
-			name:    "5",
+			name:    "6",
 			value:   "abba",
 			pattern: "a.*a",
 			match:   true,
 		},
 		{
-			name:    "6",
+			name:    "7",
 			value:   "abbbbamnsdgdgas",
 			pattern: "a.*mn.*s",
 			match:   true,
 		},
 		{
-			name:    "7",
+			name:    "8",
 			value:   "abbbbamnsdgdgas",
 			pattern: "a.*m.*n.*s",
 			match:   true,
 		},
 		{
-			name:    "8",
+			name:    "9",
 			value:   "abbbbamnsdgdgas",
 			pattern: "a.*mnn.*s",
 			match:   false,
 		},
 		{
-			name:    "9",
+			name:    "10",
 			value:   "uuuuu",
 			pattern: "u*",
 			match:   true,
 		},
 		{
-			name:    "10",
+			name:    "11",
 			value:   "aab",
 			pattern: "c*a*b",
 			match:   true,
 		},
 		{
-			name:    "11",
+			name:    "12",
 			value:   "aa",
 			pattern: "aa",
 			match:   true,
 		},
 		{
-			name:    "12",
+			name:    "13",
 			value:   "aaa",
 			pattern: "a.a",
 			match:   true,
-		},
-		{
-			name:    "13",
-			value:   "aaba",
-			pattern: "ab*a*c*a",
-			match:   false,
 		},
 		{
 			name:    "14",
@@ -105,14 +99,172 @@ func TestIsMatch(t *testing.T) {
 		},
 		{
 			name:    "15",
-			value:   "mississippi",
-			pattern: "mis*is*p*.",
+			value:   "aaca",
+			pattern: "ab*a*c*a",
+			match:   true,
+		},
+		{
+			name:    "16",
+			value:   "aaaaaaaaaaaaab",
+			pattern: "a*a*a*a*a*a*a*a*a*b",
+			match:   true,
+		},
+		{
+			name:    "17",
+			value:   "aaaaaaaaaaaaab",
+			pattern: "a*a*a*a*a*a*a*a*a*b",
+			match:   true,
+		},
+		{
+			name:    "18",
+			value:   "aa",
+			pattern: "a",
 			match:   false,
+		},
+		{
+			name:    "19",
+			value:   "abbaaaabaabbcba",
+			pattern: "a*.*ba.*c*..a*.a*.",
+			match:   true,
 		},
 	} {
 		t.Run(tCase.name, func(t *testing.T) {
 			a := assert.New(t)
 			a.Equal(tCase.match, isMatch(tCase.value, tCase.pattern))
+		})
+	}
+}
+
+func TestMatchSqueeze(t *testing.T) {
+	left := uint8('d')
+	right := uint8('s')
+	rightP := uint8('p')
+
+	leftAny := uint8(anySymbol)
+	rightAny := uint8(anySymbol)
+	for _, tCase := range []struct {
+		name                      string
+		token                     *token
+		input                     string
+		leftSqueeze, rightSqueeze *uint8
+		match                     bool
+	}{
+		{
+			name: "1",
+			token: &token{
+				one:   true,
+				value: uint8('s'),
+			},
+			input: "some",
+			match: false,
+		},
+		{
+			name: "2",
+			token: &token{
+				one:   false,
+				value: uint8(anySymbol),
+			},
+			input: "some",
+			match: true,
+		},
+		{
+			name: "3",
+			token: &token{
+				one:   false,
+				value: uint8('v'),
+			},
+			input: "vvvvv",
+			match: true,
+		},
+		{
+			name: "4",
+			token: &token{
+				one:   false,
+				value: uint8('v'),
+			},
+			leftSqueeze: &left,
+			input:       "dvvvvv",
+			match:       true,
+		},
+		{
+			name: "5",
+			token: &token{
+				one:   false,
+				value: uint8('v'),
+			},
+			leftSqueeze:  &left,
+			rightSqueeze: &right,
+			input:        "dvvvvvsss",
+			match:        true,
+		},
+		{
+			name: "6",
+			token: &token{
+				one:   false,
+				value: anySymbol,
+			},
+			input: "dvvvvvsss",
+			match: true,
+		},
+		{
+			name: "7",
+			token: &token{
+				one:   true,
+				value: uint8('b'),
+			},
+			leftSqueeze:  &left,
+			rightSqueeze: &right,
+			input:        "b",
+			match:        true,
+		},
+		{
+			name: "8",
+			token: &token{
+				one:   true,
+				value: uint8('m'),
+			},
+			leftSqueeze:  &leftAny,
+			rightSqueeze: &rightAny,
+			input:        "dfgdgsdfgsdfmdtatatat",
+			match:        true,
+		},
+		{
+			name: "9",
+			token: &token{
+				one:   false,
+				value: uint8('m'),
+			},
+			leftSqueeze:  &leftAny,
+			rightSqueeze: &rightAny,
+			input:        "dfgdgsdfgsdfdtatatat",
+			match:        true,
+		},
+		{
+			name: "10",
+			token: &token{
+				one:   false,
+				value: uint8('s'),
+			},
+			leftSqueeze:  nil,
+			rightSqueeze: &rightP,
+			input:        "ssipp",
+			match:        false,
+		},
+		{
+			name: "10",
+			token: &token{
+				one:   false,
+				value: uint8('s'),
+			},
+			leftSqueeze:  nil,
+			rightSqueeze: &rightP,
+			input:        "ssipp",
+			match:        false,
+		},
+	} {
+		t.Run(tCase.name, func(t *testing.T) {
+			a := assert.New(t)
+			a.Equal(tCase.match, matchSqueeze(tCase.token, tCase.input, tCase.leftSqueeze, tCase.rightSqueeze))
 		})
 	}
 }
