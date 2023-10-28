@@ -10,7 +10,7 @@ const (
 )
 
 func main() {
-	fmt.Println(isMatch("acaabbaccbbacaabbbb", "a*.*b*.*a*aa*a*"))
+	fmt.Println(isMatch("baabbbaccbccacacc", "c*..b*a*a.*a..*c"))
 }
 
 func isMatch(s string, p string) bool {
@@ -40,8 +40,6 @@ func isMatch(s string, p string) bool {
 }
 
 func internalMatcher(s string, tokenOne, tokenTwo *token) bool {
-	fmt.Println(printReg(tokenOne), tokenTwo.stringValue(), s)
-
 	if s == "" {
 		return tokensAreBallast(tokenOne, tokenTwo)
 	}
@@ -78,7 +76,6 @@ func internalMatcher(s string, tokenOne, tokenTwo *token) bool {
 	if val != nil {
 		return *val
 	}
-
 	tokenOne, tokenTwo, val = moveRightSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
 	if val != nil {
 		return *val
@@ -143,7 +140,7 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 
 			if firstToken == lastToken {
 				val := false
-				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], nil, nextToken.getSymbol())
+				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], prevToken.getSymbol(), nextToken.getSymbol())
 				return nil, nil, &val
 			}
 		} else {
@@ -226,7 +223,7 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 
 			if firstToken == lastToken {
 				val := false
-				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], prevToken.getSymbol(), nil)
+				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], prevToken.getSymbol(), nextToken.getSymbol())
 				return nil, nil, &val
 			}
 		} else {
