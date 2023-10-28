@@ -13,11 +13,6 @@ func main() {
 	fmt.Println(isMatch("abbaaaabaabbcba", "a*.*ba.*c*..a*.a*."))
 }
 
-// abbaaaabaabbcba
-// a*.*ba.*c*..a*.a*.
-
-// ba...(x)(x)...(x)
-
 func isMatch(s string, p string) bool {
 	tokenOne, tokenTwo := regularExprToTokens(p)
 
@@ -94,16 +89,13 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 	)
 	matchLeftInternal = copyPointerData(matchLeft)
 
-	fmt.Println(printReg(firstToken), lastToken.stringValue())
-	fmt.Println(s[*posFirst:*posLast])
-
 	for {
 		if !firstToken.one {
 			break
 		}
 
 		if equal(s[*posFirst], firstToken.value) && !rightWasApplied {
-			if !(firstToken.value == anySymbol) {
+			if matchLeftInternal != nil && !equal(s[*posFirst], *matchLeftInternal) {
 				matchLeftInternal = nil
 			}
 			matchRightInternal = copyPointerData(matchRight)
@@ -139,14 +131,10 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 					continue
 				}
 			}
-			fmt.Println("jaja1")
-
 			val := false
 			return firstToken, lastToken, &val
 		}
 	}
-	fmt.Println("===========")
-
 	return firstToken, lastToken, nil
 }
 
@@ -164,7 +152,7 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 		}
 
 		if equal(s[*posLast], lastToken.value) && !leftWasApplied {
-			if !(lastToken.value == anySymbol) {
+			if matchRightInternal != nil && !equal(s[*posLast], *matchRightInternal) {
 				matchRightInternal = nil
 			}
 			matchLeftInternal = copyPointerData(matchLeft)
