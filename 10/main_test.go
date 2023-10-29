@@ -201,6 +201,18 @@ func TestIsMatch(t *testing.T) {
 		},
 		{
 			name:    "32",
+			value:   "ab",
+			pattern: ".*..c*",
+			match:   true,
+		},
+		{
+			name:    "349",
+			value:   "abbbaabccbaabacab",
+			pattern: "ab*b*b*bc*ac*.*bb*",
+			match:   true,
+		},
+		{
+			name:    "34",
 			value:   "abbbaabccbaabacab",
 			pattern: "ab*b*b*bc*ac*.*bb*",
 			match:   true,
