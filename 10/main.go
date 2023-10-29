@@ -88,7 +88,6 @@ func internalMatcher(s string, tokenOne, tokenTwo *token) bool {
 }
 
 func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int) (*token, *token, *bool) {
-
 	startPosition := copyToken(firstToken.prev)
 	allowRestart := true
 
@@ -150,8 +149,6 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 			break
 		}
 		if equal(s[*posLast], lastToken.value) {
-			//lastToken = stealNextMatcher(lastToken)
-
 			lastToken = lastToken.prev
 			*posLast--
 
@@ -162,9 +159,6 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 
 			if firstToken == lastToken {
 				val := false
-				if !allowRestart {
-					endPosition = nil
-				}
 				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], firstToken.prev.getSymbol(), endPosition.getSymbol())
 				return nil, nil, &val
 			}
