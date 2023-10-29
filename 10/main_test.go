@@ -197,6 +197,7 @@ func TestMatchSqueeze(t *testing.T) {
 
 	leftAny := uint8(anySymbol)
 	rightAny := uint8(anySymbol)
+
 	for _, tCase := range []struct {
 		name                      string
 		token                     *token
@@ -335,6 +336,17 @@ func TestMatchSqueeze(t *testing.T) {
 			},
 			input: "aa",
 			match: false,
+		},
+		{
+			name: "13",
+			token: &token{
+				one:   true,
+				value: uint8('a'),
+			},
+			rightSqueeze: &rightAny,
+			leftSqueeze:  &a,
+			input:        "aababbb",
+			match:        true,
 		},
 	} {
 		t.Run(tCase.name, func(t *testing.T) {

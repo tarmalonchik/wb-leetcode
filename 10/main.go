@@ -10,7 +10,7 @@ const (
 )
 
 func main() {
-	fmt.Println(isMatch("aa", "a"))
+	fmt.Println(isMatch("caaacccbaababbb", "c*.*b*ba*ac*c*b*.*"))
 }
 
 func isMatch(s string, p string) bool {
@@ -251,9 +251,15 @@ func (t *token) stringValue() string {
 	return string(t.value) + string(anyCount)
 }
 
+func matchSqueeze2(token *token, in string, firstSqueeze, lastSqueeze *uint8) bool {
+	for {
+
+	}
+}
+
 func matchSqueeze(token *token, in string, firstSqueeze, lastSqueeze *uint8) bool {
 	first := 0
-	last := len(in) - 1
+	last := len(in)
 
 	firstMatch := false
 	lastMatch := false
@@ -268,12 +274,13 @@ func matchSqueeze(token *token, in string, firstSqueeze, lastSqueeze *uint8) boo
 	}
 
 	for {
+		fmt.Println(first, last)
 		if token.one {
-			if first == last {
+			if first+1 == last {
 				return equal(in[first], token.value)
 			}
 		} else {
-			if first > last {
+			if first == last {
 				return true
 			}
 		}
@@ -282,7 +289,7 @@ func matchSqueeze(token *token, in string, firstSqueeze, lastSqueeze *uint8) boo
 			if token.one {
 				return false
 			}
-			for i := first; i <= last; i++ {
+			for i := first; i < last-1; i++ {
 				if !equal(in[i], token.value) {
 					return false
 				}
@@ -292,10 +299,13 @@ func matchSqueeze(token *token, in string, firstSqueeze, lastSqueeze *uint8) boo
 
 		if !firstMatch && !firstStuck {
 			firstMatch, firstStuck = moveSqueeze(token, in, &first, last, firstSqueeze, true)
+			fmt.Println(firstMatch, firstStuck)
 			continue
 		}
 		if !lastMatch && !lastStuck {
+			fmt.Println("jangoggg")
 			lastMatch, lastStuck = moveSqueeze(token, in, &last, first, lastSqueeze, false)
+			fmt.Println(lastMatch, lastStuck)
 			continue
 		}
 
@@ -319,14 +329,11 @@ func moveSqueeze(token *token, in string, position *int, posToCompare int, squee
 		return equal(in[*position], token.value), true
 	}
 	for {
-		if left {
-			if *position > posToCompare {
-				return false, true
-			}
-		} else {
-			if *position < posToCompare {
-				return false, true
-			}
+		fmt.Println(*position, posToCompare)
+		fmt.Println(*position, posToCompare)
+		fmt.Println(*position, posToCompare)
+		if *position == posToCompare {
+			return false, true
 		}
 
 		if equal(in[*position], token.value) {
