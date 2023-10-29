@@ -10,7 +10,7 @@ const (
 )
 
 func main() {
-	fmt.Println(isMatch("abba", ".*aa.*"))
+	fmt.Println(isMatch("acbbcbcbcbaaacaac", "ac*.a*ac*.*ab*b*ac"))
 }
 
 func isMatch(s string, p string) bool {
@@ -108,6 +108,14 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 			firstToken = firstToken.next
 			*posFirst++
 
+			if firstToken.prev.value == anySymbol {
+				if allowRestart && startPosition != nil && equal(s[*posFirst-1], startPosition.value) {
+					firstToken.value = anySymbol
+					firstToken.value = startPosition.value
+					allowRestart = false
+				}
+			}
+
 			if *posFirst > *posLast {
 				val := tokensAreBallast(firstToken, lastToken)
 				return nil, nil, &val
@@ -115,7 +123,7 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 
 			if firstToken == lastToken {
 				val := false
-				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], nil, firstToken.next.getSymbol())
+				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], firstToken.prev.getSymbol(), firstToken.next.getSymbol())
 				return nil, nil, &val
 			}
 		} else {
@@ -148,9 +156,18 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 		if !lastToken.one {
 			break
 		}
+
 		if equal(s[*posLast], lastToken.value) {
 			lastToken = lastToken.prev
 			*posLast--
+
+			if lastToken.next.value == anySymbol {
+				if allowRestart && endPosition != nil && equal(s[*posLast+1], endPosition.value) {
+					lastToken.value = anySymbol
+					lastToken.one = endPosition.one
+					allowRestart = false
+				}
+			}
 
 			if *posFirst > *posLast {
 				val := tokensAreBallast(firstToken, lastToken)
@@ -159,7 +176,7 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 
 			if firstToken == lastToken {
 				val := false
-				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], firstToken.prev.getSymbol(), endPosition.getSymbol())
+				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], firstToken.prev.getSymbol(), firstToken.next.getSymbol())
 				return nil, nil, &val
 			}
 		} else {
