@@ -10,7 +10,7 @@ const (
 )
 
 func main() {
-	fmt.Println(isMatch("baabbbaccbccacacc", "c*..b*a*a.*a..*c"))
+	fmt.Println(isMatch("aa", "a"))
 }
 
 func isMatch(s string, p string) bool {
@@ -29,6 +29,7 @@ func isMatch(s string, p string) bool {
 			return *val
 		}
 	}
+
 	if tokenTwo.one {
 		var val *bool
 		tokenOne, tokenTwo, val = moveRightSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
@@ -250,94 +251,98 @@ func (t *token) stringValue() string {
 	return string(t.value) + string(anyCount)
 }
 
-func matchSqueeze(token *token, in string, leftSqueeze, rightSqueeze *uint8) bool {
-	if token.value == '.' && !token.one {
-		return true
-	}
-	if len(in) == 0 {
-		if token.one {
-			return false
-		}
-		return true
-	}
-
+func matchSqueeze(token *token, in string, firstSqueeze, lastSqueeze *uint8) bool {
 	first := 0
 	last := len(in) - 1
 
-	match := false
-	meet := false
+	firstMatch := false
+	lastMatch := false
+	firstStuck := false
+	lastStuck := false
 
-	leftStuck := false
-	rightStuck := false
+	if firstSqueeze == nil {
+		firstStuck = true
+	}
+	if lastSqueeze == nil {
+		lastStuck = true
+	}
+
 	for {
-		if first > last {
-			meet = true
-			break
-		}
-
-		if leftSqueeze == nil {
-			leftStuck = true
-		}
-		if rightSqueeze == nil {
-			rightStuck = true
-		}
-
-		if !leftStuck {
-			if equal(in[first], *leftSqueeze) {
-				if equal(in[first], token.value) {
-					match = true
-				}
-				first++
-				continue
-			} else {
-				leftStuck = true
+		if token.one {
+			if first == last {
+				return equal(in[first], token.value)
+			}
+		} else {
+			if first > last {
+				return true
 			}
 		}
 
-		if !rightStuck {
-			if equal(in[last], *rightSqueeze) {
-				if equal(in[last], token.value) {
-					match = true
-				}
-				last--
-				continue
-			} else {
-				rightStuck = true
-			}
-		}
-
-		if rightStuck && leftStuck {
+		if firstStuck && lastStuck {
 			if token.one {
-				if len(in[first:last]) == 0 {
-					match = equal(in[first], token.value)
+				return false
+			}
+			for i := first; i <= last; i++ {
+				if !equal(in[i], token.value) {
+					return false
 				}
-				break
 			}
-			if !findSymbolInString(in[first:last+1], token.value) {
-				match = false
-				break
-			}
-			match = true
-			break
+			return true
+		}
+
+		if !firstMatch && !firstStuck {
+			firstMatch, firstStuck = moveSqueeze(token, in, &first, last, firstSqueeze, true)
+			continue
+		}
+		if !lastMatch && !lastStuck {
+			lastMatch, lastStuck = moveSqueeze(token, in, &last, first, lastSqueeze, false)
+			continue
+		}
+
+		if firstMatch && !firstStuck {
+			first++
+			firstMatch = false
+			firstMatch, firstStuck = moveSqueeze(token, in, &first, last, firstSqueeze, true)
+			continue
+		}
+		if lastMatch && !lastStuck {
+			last--
+			lastMatch = false
+			lastMatch, lastStuck = moveSqueeze(token, in, &last, first, lastSqueeze, false)
+			continue
 		}
 	}
-
-	if !meet && match {
-		return true
-	}
-	if meet && (match || !token.one) {
-		return true
-	}
-	return false
 }
 
-func findSymbolInString(in string, symbol uint8) bool {
-	for i := range in {
-		if !equal(in[i], symbol) {
-			return false
+func moveSqueeze(token *token, in string, position *int, posToCompare int, squeeze *uint8, left bool) (match bool, stuck bool) {
+	if squeeze == nil {
+		return equal(in[*position], token.value), true
+	}
+	for {
+		if left {
+			if *position > posToCompare {
+				return false, true
+			}
+		} else {
+			if *position < posToCompare {
+				return false, true
+			}
+		}
+
+		if equal(in[*position], token.value) {
+			return true, !equal(in[*position], *squeeze)
+		}
+
+		if equal(in[*position], *squeeze) {
+			if left {
+				*position++
+			} else {
+				*position--
+			}
+		} else {
+			return false, true
 		}
 	}
-	return true
 }
 
 func equal(value, pattern uint8) bool {

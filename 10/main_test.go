@@ -175,6 +175,12 @@ func TestIsMatch(t *testing.T) {
 			pattern: "b*.*b*a*.a*b*.a*",
 			match:   true,
 		},
+		{
+			name:    "28",
+			value:   "caaacccbaababbb",
+			pattern: "c*.*b*ba*ac*c*b*.*",
+			match:   true,
+		},
 	} {
 		t.Run(tCase.name, func(t *testing.T) {
 			a := assert.New(t)
@@ -184,10 +190,9 @@ func TestIsMatch(t *testing.T) {
 }
 
 func TestMatchSqueeze(t *testing.T) {
-	left := uint8('d')
-	right := uint8('s')
-	rightP := uint8('p')
-
+	d := uint8('d')
+	s := uint8('s')
+	p := uint8('p')
 	a := uint8('a')
 
 	leftAny := uint8(anySymbol)
@@ -232,7 +237,7 @@ func TestMatchSqueeze(t *testing.T) {
 				one:   false,
 				value: uint8('v'),
 			},
-			leftSqueeze: &left,
+			leftSqueeze: &d,
 			input:       "dvvvvv",
 			match:       true,
 		},
@@ -242,9 +247,9 @@ func TestMatchSqueeze(t *testing.T) {
 				one:   false,
 				value: uint8('v'),
 			},
-			leftSqueeze:  &left,
-			rightSqueeze: &right,
-			input:        "dvvvvvsss",
+			leftSqueeze:  &d,
+			rightSqueeze: &s,
+			input:        "dvsss",
 			match:        true,
 		},
 		{
@@ -262,8 +267,8 @@ func TestMatchSqueeze(t *testing.T) {
 				one:   true,
 				value: uint8('b'),
 			},
-			leftSqueeze:  &left,
-			rightSqueeze: &right,
+			leftSqueeze:  &d,
+			rightSqueeze: &s,
 			input:        "b",
 			match:        true,
 		},
@@ -296,7 +301,7 @@ func TestMatchSqueeze(t *testing.T) {
 				value: uint8('s'),
 			},
 			leftSqueeze:  nil,
-			rightSqueeze: &rightP,
+			rightSqueeze: &p,
 			input:        "ssipp",
 			match:        false,
 		},
@@ -307,7 +312,7 @@ func TestMatchSqueeze(t *testing.T) {
 				value: uint8('s'),
 			},
 			leftSqueeze:  nil,
-			rightSqueeze: &rightP,
+			rightSqueeze: &p,
 			input:        "ssipp",
 			match:        false,
 		},
@@ -321,6 +326,15 @@ func TestMatchSqueeze(t *testing.T) {
 			rightSqueeze: &a,
 			input:        "cbaabcccaaaaa",
 			match:        false,
+		},
+		{
+			name: "12",
+			token: &token{
+				one:   true,
+				value: uint8('a'),
+			},
+			input: "aa",
+			match: false,
 		},
 	} {
 		t.Run(tCase.name, func(t *testing.T) {
