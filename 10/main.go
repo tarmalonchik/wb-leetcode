@@ -193,38 +193,6 @@ func stealPrevValue(token *token) *token {
 	return token
 }
 
-//func stealNextMatcher(token *token) *token {
-//	if token.next == nil {
-//		return token
-//	}
-//	if !token.next.one {
-//		if token.next.value == anySymbol {
-//			token.value = anySymbol
-//			token.one = false
-//		}
-//		if token.next.value == token.value {
-//			token.one = false
-//		}
-//	}
-//	return token
-//}
-//
-//func stealPrevMatcher(token *token) *token {
-//	if token.prev == nil {
-//		return token
-//	}
-//	if !token.prev.one {
-//		if token.prev.value == anySymbol {
-//			token.value = anySymbol
-//			token.one = false
-//		}
-//		if token.prev.value == token.value {
-//			token.one = false
-//		}
-//	}
-//	return token
-//}
-
 func tokensAreBallast(firstToken, lastToken *token) bool {
 	if firstToken == nil && lastToken == nil {
 		return false
