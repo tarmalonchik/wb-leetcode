@@ -226,20 +226,18 @@ func TestIsMatch(t *testing.T) {
 }
 
 func TestMatchSqueeze(t *testing.T) {
-	d := uint8('d')
-	s := uint8('s')
-	p := uint8('p')
-	a := uint8('a')
-	c := uint8('c')
-
-	leftAny := uint8(anySymbol)
-	rightAny := uint8(anySymbol)
+	s := createToken('s')
+	p := createToken('p')
+	a := createToken('a')
+	c := createToken('c')
+	d := createToken('d')
+	anySym := createToken(anySymbol)
 
 	for _, tCase := range []struct {
 		name                      string
 		token                     *token
 		input                     string
-		leftSqueeze, rightSqueeze *uint8
+		leftSqueeze, rightSqueeze *token
 		match                     bool
 	}{
 		{
@@ -274,21 +272,21 @@ func TestMatchSqueeze(t *testing.T) {
 			token: &token{
 				one:   false,
 				value: uint8('v'),
+				prev:  d,
 			},
-			leftSqueeze: &d,
-			input:       "dvvvvv",
-			match:       true,
+			input: "dvvvvv",
+			match: true,
 		},
 		{
 			name: "5",
 			token: &token{
 				one:   false,
 				value: uint8('v'),
+				prev:  d,
+				next:  s,
 			},
-			leftSqueeze:  &d,
-			rightSqueeze: &s,
-			input:        "dvsss",
-			match:        true,
+			input: "dvsss",
+			match: true,
 		},
 		{
 			name: "6",
@@ -304,66 +302,64 @@ func TestMatchSqueeze(t *testing.T) {
 			token: &token{
 				one:   true,
 				value: uint8('b'),
+				prev:  d,
+				next:  s,
 			},
-			leftSqueeze:  &d,
-			rightSqueeze: &s,
-			input:        "b",
-			match:        true,
+			input: "b",
+			match: true,
 		},
 		{
 			name: "8",
 			token: &token{
 				one:   true,
 				value: uint8('m'),
+				prev:  anySym,
+				next:  anySym,
 			},
-			leftSqueeze:  &leftAny,
-			rightSqueeze: &rightAny,
-			input:        "dfgdgsdfgsdfmdtatatat",
-			match:        true,
+			input: "dfgdgsdfgsdfmdtatatat",
+			match: true,
 		},
 		{
 			name: "9",
 			token: &token{
 				one:   false,
 				value: uint8('m'),
+				prev:  anySym,
+				next:  anySym,
 			},
-			leftSqueeze:  &leftAny,
-			rightSqueeze: &rightAny,
-			input:        "dfgdgsdfgsdfdtatatat",
-			match:        true,
+			input: "dfgdgsdfgsdfdtatatat",
+			match: true,
 		},
 		{
 			name: "10",
 			token: &token{
 				one:   false,
 				value: uint8('s'),
+				next:  p,
 			},
-			leftSqueeze:  nil,
-			rightSqueeze: &p,
-			input:        "ssipp",
-			match:        false,
+			input: "ssipp",
+			match: false,
 		},
 		{
 			name: "10",
 			token: &token{
 				one:   false,
 				value: uint8('s'),
+				next:  p,
 			},
-			leftSqueeze:  nil,
-			rightSqueeze: &p,
-			input:        "ssipp",
-			match:        false,
+			input: "ssipp",
+			match: false,
 		},
 		{
 			name: "11",
 			token: &token{
 				one:   false,
 				value: uint8('a'),
+				next:  a,
+				prev:  a,
 			},
-			leftSqueeze:  &a,
-			rightSqueeze: &a,
-			input:        "cbaabcccaaaaa",
-			match:        false,
+			input: "cbaabcccaaaaa",
+			match: false,
 		},
 		{
 			name: "12",
@@ -379,27 +375,34 @@ func TestMatchSqueeze(t *testing.T) {
 			token: &token{
 				one:   true,
 				value: uint8('a'),
+				next:  anySym,
+				prev:  a,
 			},
-			rightSqueeze: &rightAny,
-			leftSqueeze:  &a,
-			input:        "aababbb",
-			match:        true,
+			input: "aababbb",
+			match: true,
 		},
 		{
 			name: "14",
 			token: &token{
 				one:   false,
 				value: uint8('.'),
+				next:  c,
+				prev:  anySym,
 			},
-			rightSqueeze: &c,
-			leftSqueeze:  &leftAny,
-			input:        "bbacabbbb",
-			match:        true,
+			input: "bbacabbbb",
+			match: true,
 		},
 	} {
 		t.Run(tCase.name, func(t *testing.T) {
-			a := assert.New(t)
-			a.Equal(tCase.match, matchSqueeze(tCase.token, tCase.input, tCase.leftSqueeze, tCase.rightSqueeze))
+			ass := assert.New(t)
+			ass.Equal(tCase.match, tCase.token.matchSqueeze(tCase.input))
 		})
+	}
+}
+
+func createToken(value uint8) *token {
+	return &token{
+		one:   false,
+		value: value,
 	}
 }
