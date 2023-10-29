@@ -10,7 +10,7 @@ const (
 )
 
 func main() {
-	fmt.Println(isMatch("caaacccbaababbb", "c*.*b*ba*ac*c*b*.*"))
+	fmt.Println(isMatch("abba", ".*aa.*"))
 }
 
 func isMatch(s string, p string) bool {
@@ -65,6 +65,7 @@ func internalMatcher(s string, tokenOne, tokenTwo *token) bool {
 	}
 	tokenOne = tokenOne.next
 	tokenTwo = tokenTwo.prev
+
 	tokenTwo = stealNextValue(tokenTwo)
 	tokenOne = stealPrevValue(tokenOne)
 
@@ -87,6 +88,7 @@ func internalMatcher(s string, tokenOne, tokenTwo *token) bool {
 }
 
 func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int) (*token, *token, *bool) {
+
 	startPosition := copyToken(firstToken.prev)
 	allowRestart := true
 
@@ -104,8 +106,6 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 			break
 		}
 		if equal(s[*posFirst], firstToken.value) {
-			firstToken = stealPrevMatcher(firstToken)
-
 			firstToken = firstToken.next
 			*posFirst++
 
@@ -116,11 +116,12 @@ func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int
 
 			if firstToken == lastToken {
 				val := false
-				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], firstToken.prev.getSymbol(), firstToken.next.getSymbol())
+				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], nil, firstToken.next.getSymbol())
 				return nil, nil, &val
 			}
 		} else {
 			if allowRestart {
+				firstToken = startPosition.next
 				*posFirst++
 				continue
 			}
@@ -149,7 +150,7 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 			break
 		}
 		if equal(s[*posLast], lastToken.value) {
-			lastToken = stealNextMatcher(lastToken)
+			//lastToken = stealNextMatcher(lastToken)
 
 			lastToken = lastToken.prev
 			*posLast--
@@ -161,12 +162,16 @@ func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *in
 
 			if firstToken == lastToken {
 				val := false
-				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], firstToken.prev.getSymbol(), firstToken.next.getSymbol())
+				if !allowRestart {
+					endPosition = nil
+				}
+				val = matchSqueeze(firstToken, s[*posFirst:*posLast+1], firstToken.prev.getSymbol(), endPosition.getSymbol())
 				return nil, nil, &val
 			}
 		} else {
 			if allowRestart {
 				*posLast--
+				lastToken = endPosition.prev
 				continue
 			}
 			val := false
@@ -194,37 +199,37 @@ func stealPrevValue(token *token) *token {
 	return token
 }
 
-func stealNextMatcher(token *token) *token {
-	if token.next == nil {
-		return token
-	}
-	if !token.next.one {
-		if token.next.value == anySymbol {
-			token.value = anySymbol
-			token.one = false
-		}
-		if token.next.value == token.value {
-			token.one = false
-		}
-	}
-	return token
-}
-
-func stealPrevMatcher(token *token) *token {
-	if token.prev == nil {
-		return token
-	}
-	if !token.prev.one {
-		if token.prev.value == anySymbol {
-			token.value = anySymbol
-			token.one = false
-		}
-		if token.prev.value == token.value {
-			token.one = false
-		}
-	}
-	return token
-}
+//func stealNextMatcher(token *token) *token {
+//	if token.next == nil {
+//		return token
+//	}
+//	if !token.next.one {
+//		if token.next.value == anySymbol {
+//			token.value = anySymbol
+//			token.one = false
+//		}
+//		if token.next.value == token.value {
+//			token.one = false
+//		}
+//	}
+//	return token
+//}
+//
+//func stealPrevMatcher(token *token) *token {
+//	if token.prev == nil {
+//		return token
+//	}
+//	if !token.prev.one {
+//		if token.prev.value == anySymbol {
+//			token.value = anySymbol
+//			token.one = false
+//		}
+//		if token.prev.value == token.value {
+//			token.one = false
+//		}
+//	}
+//	return token
+//}
 
 func tokensAreBallast(firstToken, lastToken *token) bool {
 	if firstToken == nil && lastToken == nil {

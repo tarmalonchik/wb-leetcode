@@ -177,9 +177,15 @@ func TestIsMatch(t *testing.T) {
 		},
 		{
 			name:    "28",
-			value:   "caaacccbaababbb",
-			pattern: "c*.*b*ba*ac*c*b*.*",
-			match:   true,
+			value:   "cabcbabbacabbbba",
+			pattern: "b*.*aa.*c*c*aa*b*",
+			match:   false,
+		},
+		{
+			name:    "29",
+			value:   "abba",
+			pattern: ".*aa.*",
+			match:   false,
 		},
 	} {
 		t.Run(tCase.name, func(t *testing.T) {
@@ -194,6 +200,7 @@ func TestMatchSqueeze(t *testing.T) {
 	s := uint8('s')
 	p := uint8('p')
 	a := uint8('a')
+	c := uint8('c')
 
 	leftAny := uint8(anySymbol)
 	rightAny := uint8(anySymbol)
@@ -346,6 +353,17 @@ func TestMatchSqueeze(t *testing.T) {
 			rightSqueeze: &rightAny,
 			leftSqueeze:  &a,
 			input:        "aababbb",
+			match:        true,
+		},
+		{
+			name: "14",
+			token: &token{
+				one:   false,
+				value: uint8('.'),
+			},
+			rightSqueeze: &c,
+			leftSqueeze:  &leftAny,
+			input:        "bbacabbbb",
 			match:        true,
 		},
 	} {
