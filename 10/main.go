@@ -251,18 +251,10 @@ func (t *token) stringValue() string {
 	return string(t.value) + string(anyCount)
 }
 
-func matchSqueeze2(token *token, in string, firstSqueeze, lastSqueeze *uint8) bool {
-	for {
-
-	}
-}
-
 func matchSqueeze(token *token, in string, firstSqueeze, lastSqueeze *uint8) bool {
 	first := 0
 	last := len(in)
 
-	firstMatch := false
-	lastMatch := false
 	firstStuck := false
 	lastStuck := false
 
@@ -274,22 +266,17 @@ func matchSqueeze(token *token, in string, firstSqueeze, lastSqueeze *uint8) boo
 	}
 
 	for {
-		fmt.Println(first, last)
-		if token.one {
-			if first+1 == last {
-				return equal(in[first], token.value)
-			}
-		} else {
-			if first == last {
-				return true
-			}
+		if last-first == 1 && token.one {
+			return equal(in[first], token.value)
 		}
-
+		if last == first && !token.one {
+			return true
+		}
 		if firstStuck && lastStuck {
 			if token.one {
 				return false
 			}
-			for i := first; i < last-1; i++ {
+			for i := first; i < last; i++ {
 				if !equal(in[i], token.value) {
 					return false
 				}
@@ -297,57 +284,58 @@ func matchSqueeze(token *token, in string, firstSqueeze, lastSqueeze *uint8) boo
 			return true
 		}
 
-		if !firstMatch && !firstStuck {
-			firstMatch, firstStuck = moveSqueeze(token, in, &first, last, firstSqueeze, true)
-			fmt.Println(firstMatch, firstStuck)
-			continue
-		}
-		if !lastMatch && !lastStuck {
-			fmt.Println("jangoggg")
-			lastMatch, lastStuck = moveSqueeze(token, in, &last, first, lastSqueeze, false)
-			fmt.Println(lastMatch, lastStuck)
-			continue
-		}
-
-		if firstMatch && !firstStuck {
-			first++
-			firstMatch = false
-			firstMatch, firstStuck = moveSqueeze(token, in, &first, last, firstSqueeze, true)
-			continue
-		}
-		if lastMatch && !lastStuck {
-			last--
-			lastMatch = false
-			lastMatch, lastStuck = moveSqueeze(token, in, &last, first, lastSqueeze, false)
-			continue
-		}
-	}
-}
-
-func moveSqueeze(token *token, in string, position *int, posToCompare int, squeeze *uint8, left bool) (match bool, stuck bool) {
-	if squeeze == nil {
-		return equal(in[*position], token.value), true
-	}
-	for {
-		fmt.Println(*position, posToCompare)
-		fmt.Println(*position, posToCompare)
-		fmt.Println(*position, posToCompare)
-		if *position == posToCompare {
-			return false, true
-		}
-
-		if equal(in[*position], token.value) {
-			return true, !equal(in[*position], *squeeze)
-		}
-
-		if equal(in[*position], *squeeze) {
-			if left {
-				*position++
+		if !firstStuck && !equal(in[first], token.value) {
+			if equal(in[first], *firstSqueeze) {
+				first++
 			} else {
-				*position--
+				firstStuck = true
 			}
-		} else {
-			return false, true
+			continue
+		}
+
+		if !lastStuck && !equal(in[last-1], token.value) {
+			if equal(in[last-1], *lastSqueeze) {
+				last--
+			} else {
+				lastStuck = true
+			}
+			continue
+		}
+
+		if !firstStuck {
+			if token.one {
+				if first+1 < len(in) {
+					if !equal(in[first+1], *firstSqueeze) {
+						firstStuck = true
+						continue
+					}
+				}
+			}
+
+			if equal(in[first], *firstSqueeze) {
+				first++
+			} else {
+				firstStuck = true
+			}
+			continue
+		}
+
+		if !lastStuck {
+			if token.one {
+				if last-1 > 0 {
+					if !equal(in[last-2], *lastSqueeze) {
+						lastStuck = true
+						continue
+					}
+				}
+			}
+
+			if equal(in[last-1], *lastSqueeze) {
+				last--
+			} else {
+				lastStuck = true
+			}
+			continue
 		}
 	}
 }
