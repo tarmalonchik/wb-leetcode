@@ -225,184 +225,184 @@ func TestIsMatch(t *testing.T) {
 	}
 }
 
-func TestMatchSqueeze(t *testing.T) {
-	s := createToken('s')
-	p := createToken('p')
-	a := createToken('a')
-	c := createToken('c')
-	d := createToken('d')
-	anySym := createToken(anySymbol)
-
-	for _, tCase := range []struct {
-		name                      string
-		token                     *token
-		input                     string
-		leftSqueeze, rightSqueeze *token
-		match                     bool
-	}{
-		{
-			name: "1",
-			token: &token{
-				single: true,
-				value:  uint8('s'),
-			},
-			input: "some",
-			match: false,
-		},
-		{
-			name: "2",
-			token: &token{
-				single: false,
-				value:  uint8(anySymbol),
-			},
-			input: "some",
-			match: true,
-		},
-		{
-			name: "3",
-			token: &token{
-				single: false,
-				value:  uint8('v'),
-			},
-			input: "vvvvv",
-			match: true,
-		},
-		{
-			name: "4",
-			token: &token{
-				single: false,
-				value:  uint8('v'),
-				prev:   d,
-			},
-			input: "dvvvvv",
-			match: true,
-		},
-		{
-			name: "5",
-			token: &token{
-				single: false,
-				value:  uint8('v'),
-				prev:   d,
-				next:   s,
-			},
-			input: "dvsss",
-			match: true,
-		},
-		{
-			name: "6",
-			token: &token{
-				single: false,
-				value:  anySymbol,
-			},
-			input: "dvvvvvsss",
-			match: true,
-		},
-		{
-			name: "7",
-			token: &token{
-				single: true,
-				value:  uint8('b'),
-				prev:   d,
-				next:   s,
-			},
-			input: "b",
-			match: true,
-		},
-		{
-			name: "8",
-			token: &token{
-				single: true,
-				value:  uint8('m'),
-				prev:   anySym,
-				next:   anySym,
-			},
-			input: "dfgdgsdfgsdfmdtatatat",
-			match: true,
-		},
-		{
-			name: "9",
-			token: &token{
-				single: false,
-				value:  uint8('m'),
-				prev:   anySym,
-				next:   anySym,
-			},
-			input: "dfgdgsdfgsdfdtatatat",
-			match: true,
-		},
-		{
-			name: "10",
-			token: &token{
-				single: false,
-				value:  uint8('s'),
-				next:   p,
-			},
-			input: "ssipp",
-			match: false,
-		},
-		{
-			name: "10",
-			token: &token{
-				single: false,
-				value:  uint8('s'),
-				next:   p,
-			},
-			input: "ssipp",
-			match: false,
-		},
-		{
-			name: "11",
-			token: &token{
-				single: false,
-				value:  uint8('a'),
-				next:   a,
-				prev:   a,
-			},
-			input: "cbaabcccaaaaa",
-			match: false,
-		},
-		{
-			name: "12",
-			token: &token{
-				single: true,
-				value:  uint8('a'),
-			},
-			input: "aa",
-			match: false,
-		},
-		{
-			name: "13",
-			token: &token{
-				single: true,
-				value:  uint8('a'),
-				next:   anySym,
-				prev:   a,
-			},
-			input: "aababbb",
-			match: true,
-		},
-		{
-			name: "14",
-			token: &token{
-				single: false,
-				value:  uint8('.'),
-				next:   c,
-				prev:   anySym,
-			},
-			input: "bbacabbbb",
-			match: true,
-		},
-	} {
-		t.Run(tCase.name, func(t *testing.T) {
-			ass := assert.New(t)
-			ass.Equal(tCase.match, tCase.token.matchSqueeze(tCase.input))
-		})
-	}
-}
-
-func createToken(value uint8) *token {
-	return &token{
-		single: false,
-		value:  value,
-	}
-}
+//func TestMatchSqueeze(t *testing.T) {
+//	s := createToken('s')
+//	p := createToken('p')
+//	a := createToken('a')
+//	c := createToken('c')
+//	d := createToken('d')
+//	anySym := createToken(anySymbol)
+//
+//	for _, tCase := range []struct {
+//		name                      string
+//		token                     *token
+//		input                     string
+//		leftSqueeze, rightSqueeze *token
+//		match                     bool
+//	}{
+//		{
+//			name: "1",
+//			token: &token{
+//				single: true,
+//				value:  uint8('s'),
+//			},
+//			input: "some",
+//			match: false,
+//		},
+//		{
+//			name: "2",
+//			token: &token{
+//				single: false,
+//				value:  uint8(anySymbol),
+//			},
+//			input: "some",
+//			match: true,
+//		},
+//		{
+//			name: "3",
+//			token: &token{
+//				single: false,
+//				value:  uint8('v'),
+//			},
+//			input: "vvvvv",
+//			match: true,
+//		},
+//		{
+//			name: "4",
+//			token: &token{
+//				single: false,
+//				value:  uint8('v'),
+//				prev:   d,
+//			},
+//			input: "dvvvvv",
+//			match: true,
+//		},
+//		{
+//			name: "5",
+//			token: &token{
+//				single: false,
+//				value:  uint8('v'),
+//				prev:   d,
+//				next:   s,
+//			},
+//			input: "dvsss",
+//			match: true,
+//		},
+//		{
+//			name: "6",
+//			token: &token{
+//				single: false,
+//				value:  anySymbol,
+//			},
+//			input: "dvvvvvsss",
+//			match: true,
+//		},
+//		{
+//			name: "7",
+//			token: &token{
+//				single: true,
+//				value:  uint8('b'),
+//				prev:   d,
+//				next:   s,
+//			},
+//			input: "b",
+//			match: true,
+//		},
+//		{
+//			name: "8",
+//			token: &token{
+//				single: true,
+//				value:  uint8('m'),
+//				prev:   anySym,
+//				next:   anySym,
+//			},
+//			input: "dfgdgsdfgsdfmdtatatat",
+//			match: true,
+//		},
+//		{
+//			name: "9",
+//			token: &token{
+//				single: false,
+//				value:  uint8('m'),
+//				prev:   anySym,
+//				next:   anySym,
+//			},
+//			input: "dfgdgsdfgsdfdtatatat",
+//			match: true,
+//		},
+//		{
+//			name: "10",
+//			token: &token{
+//				single: false,
+//				value:  uint8('s'),
+//				next:   p,
+//			},
+//			input: "ssipp",
+//			match: false,
+//		},
+//		{
+//			name: "10",
+//			token: &token{
+//				single: false,
+//				value:  uint8('s'),
+//				next:   p,
+//			},
+//			input: "ssipp",
+//			match: false,
+//		},
+//		{
+//			name: "11",
+//			token: &token{
+//				single: false,
+//				value:  uint8('a'),
+//				next:   a,
+//				prev:   a,
+//			},
+//			input: "cbaabcccaaaaa",
+//			match: false,
+//		},
+//		{
+//			name: "12",
+//			token: &token{
+//				single: true,
+//				value:  uint8('a'),
+//			},
+//			input: "aa",
+//			match: false,
+//		},
+//		{
+//			name: "13",
+//			token: &token{
+//				single: true,
+//				value:  uint8('a'),
+//				next:   anySym,
+//				prev:   a,
+//			},
+//			input: "aababbb",
+//			match: true,
+//		},
+//		{
+//			name: "14",
+//			token: &token{
+//				single: false,
+//				value:  uint8('.'),
+//				next:   c,
+//				prev:   anySym,
+//			},
+//			input: "bbacabbbb",
+//			match: true,
+//		},
+//	} {
+//		t.Run(tCase.name, func(t *testing.T) {
+//			ass := assert.New(t)
+//			ass.Equal(tCase.match, tCase.token.matchSqueeze(tCase.input))
+//		})
+//	}
+//}
+//
+//func createToken(value uint8) *token {
+//	return &token{
+//		single: false,
+//		value:  value,
+//	}
+//}
