@@ -243,8 +243,8 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "1",
 			token: &token{
-				one:   true,
-				value: uint8('s'),
+				single: true,
+				value:  uint8('s'),
 			},
 			input: "some",
 			match: false,
@@ -252,8 +252,8 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "2",
 			token: &token{
-				one:   false,
-				value: uint8(anySymbol),
+				single: false,
+				value:  uint8(anySymbol),
 			},
 			input: "some",
 			match: true,
@@ -261,8 +261,8 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "3",
 			token: &token{
-				one:   false,
-				value: uint8('v'),
+				single: false,
+				value:  uint8('v'),
 			},
 			input: "vvvvv",
 			match: true,
@@ -270,9 +270,9 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "4",
 			token: &token{
-				one:   false,
-				value: uint8('v'),
-				prev:  d,
+				single: false,
+				value:  uint8('v'),
+				prev:   d,
 			},
 			input: "dvvvvv",
 			match: true,
@@ -280,10 +280,10 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "5",
 			token: &token{
-				one:   false,
-				value: uint8('v'),
-				prev:  d,
-				next:  s,
+				single: false,
+				value:  uint8('v'),
+				prev:   d,
+				next:   s,
 			},
 			input: "dvsss",
 			match: true,
@@ -291,8 +291,8 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "6",
 			token: &token{
-				one:   false,
-				value: anySymbol,
+				single: false,
+				value:  anySymbol,
 			},
 			input: "dvvvvvsss",
 			match: true,
@@ -300,10 +300,10 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "7",
 			token: &token{
-				one:   true,
-				value: uint8('b'),
-				prev:  d,
-				next:  s,
+				single: true,
+				value:  uint8('b'),
+				prev:   d,
+				next:   s,
 			},
 			input: "b",
 			match: true,
@@ -311,10 +311,10 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "8",
 			token: &token{
-				one:   true,
-				value: uint8('m'),
-				prev:  anySym,
-				next:  anySym,
+				single: true,
+				value:  uint8('m'),
+				prev:   anySym,
+				next:   anySym,
 			},
 			input: "dfgdgsdfgsdfmdtatatat",
 			match: true,
@@ -322,10 +322,10 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "9",
 			token: &token{
-				one:   false,
-				value: uint8('m'),
-				prev:  anySym,
-				next:  anySym,
+				single: false,
+				value:  uint8('m'),
+				prev:   anySym,
+				next:   anySym,
 			},
 			input: "dfgdgsdfgsdfdtatatat",
 			match: true,
@@ -333,9 +333,9 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "10",
 			token: &token{
-				one:   false,
-				value: uint8('s'),
-				next:  p,
+				single: false,
+				value:  uint8('s'),
+				next:   p,
 			},
 			input: "ssipp",
 			match: false,
@@ -343,9 +343,9 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "10",
 			token: &token{
-				one:   false,
-				value: uint8('s'),
-				next:  p,
+				single: false,
+				value:  uint8('s'),
+				next:   p,
 			},
 			input: "ssipp",
 			match: false,
@@ -353,10 +353,10 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "11",
 			token: &token{
-				one:   false,
-				value: uint8('a'),
-				next:  a,
-				prev:  a,
+				single: false,
+				value:  uint8('a'),
+				next:   a,
+				prev:   a,
 			},
 			input: "cbaabcccaaaaa",
 			match: false,
@@ -364,8 +364,8 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "12",
 			token: &token{
-				one:   true,
-				value: uint8('a'),
+				single: true,
+				value:  uint8('a'),
 			},
 			input: "aa",
 			match: false,
@@ -373,10 +373,10 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "13",
 			token: &token{
-				one:   true,
-				value: uint8('a'),
-				next:  anySym,
-				prev:  a,
+				single: true,
+				value:  uint8('a'),
+				next:   anySym,
+				prev:   a,
 			},
 			input: "aababbb",
 			match: true,
@@ -384,10 +384,10 @@ func TestMatchSqueeze(t *testing.T) {
 		{
 			name: "14",
 			token: &token{
-				one:   false,
-				value: uint8('.'),
-				next:  c,
-				prev:  anySym,
+				single: false,
+				value:  uint8('.'),
+				next:   c,
+				prev:   anySym,
 			},
 			input: "bbacabbbb",
 			match: true,
@@ -402,7 +402,7 @@ func TestMatchSqueeze(t *testing.T) {
 
 func createToken(value uint8) *token {
 	return &token{
-		one:   false,
-		value: value,
+		single: false,
+		value:  value,
 	}
 }

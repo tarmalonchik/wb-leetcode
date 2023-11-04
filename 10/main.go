@@ -13,160 +13,128 @@ func main() {
 	fmt.Println(isMatch("abbbaabccbaabacab", "ab*b*b*bc*ac*.*bb*"))
 }
 
-// a bb     b    a     abccbaabaca  b
-// a b*b*b* b c* a c*  .*           b   b*
+// a b*b*b* b c* a c* .*           bb*
+// a     bb b    a    abccbaabaca  b
 
-// ab*b*b*bc*ac*.*bb*
-// b*b*b*bc*ac*.*bb* b* bbbaabccbaabacab
-// b*b*bc*ac*.*bb* .* bbbaabccbaabaca
-// b*bc*a.*.*bb* .* bbbaabccbaabaca
-// c*a.*.*bb* c* bbaabccbaabac
+//	ab*b*b*bc*ac*.*bb* b* abbbaabccbaabacab
+//	 b*b*b*bc*ac*.*bb* b*  bbbaabccbaabacab
+//	   b*b*bc*ac*.*bb* b*  bbbaabccbaabacab
+//	     b*bc*ac*.*bb* b*  bbbaabccbaabacab
+//	       bc*ac*.*bb* b*  bbbaabccbaabacab
+//	        c*ac*.*bb* b*   bbaabccbaabacab
+//	          ac*.*bb* b*   bbaabccbaabacab
 
 func isMatch(s string, p string) (resp bool) {
-	tokenOne, tokenTwo := regularExprToTokens(p)
-
-	if tokenOne == tokenTwo {
-		return internalMatcher(s, tokenOne, tokenTwo)
-	}
-
-	posOne, posTwo := 0, len(s)-1
-
-	if tokenOne.one {
-		tokenOne, tokenTwo, resp = moveLeftSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
-		if tokenOne == nil && tokenTwo == nil {
-			return resp
-		}
-	}
-
-	if tokenTwo.one {
-		tokenOne, tokenTwo, resp = moveRightSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
-		if tokenOne == nil && tokenTwo == nil {
-			return resp
-		}
-	}
-	return internalMatcher(s[posOne:posTwo+1], tokenOne, tokenTwo)
+	lToken, rToken := regularExprToTokens(p)
+	return internalMatcher(s, lToken, rToken)
 }
 
-func internalMatcher(s string, tokenOne, tokenTwo *token) (resp bool) {
-	fmt.Println(tokenOne.printReg(), tokenTwo.stringValue(), s)
-
-	if tokenOne == tokenTwo {
-		tokenOne.next = nil
-		tokenOne.prev = nil
-		return tokenOne.matchSqueeze(s)
+func internalMatcher(s string, lToken, rToken *token) (resp bool) {
+	if lToken == rToken {
+		return lToken.matchSqueeze(s)
 	}
-	if tokenOne.next == tokenTwo {
-		for i := range s {
-			if tokenOne.equal(s[i]) {
-				continue
+
+	if priorityIsLeft(lToken, rToken) {
+		if lToken.single {
+			s, lToken, rToken, resp = moveLeftSide(s, lToken, rToken)
+			if lToken == nil && rToken == nil {
+				return resp
 			}
-			tokenOne = nil
-			if tokenTwo.equal(s[i]) {
-				continue
-			}
-			return false
+		} else {
+			lToken = lToken.next
+			lToken.stealPrevValue()
 		}
-		return true
+	} else {
+		if rToken.single {
+			s, lToken, rToken, resp = moveRightSide(s, lToken, rToken)
+			if lToken == nil && rToken == nil {
+				return resp
+			}
+		} else {
+			rToken = rToken.prev
+			rToken.stealNextValue()
+		}
 	}
-
-	tokenTwo = tokenTwo.prev
-	tokenTwo.stealNextValue()
-
-	tokenOne = tokenOne.next
-	tokenOne.stealPrevValue()
-
-	if tokenOne == tokenTwo {
-		return tokenOne.matchSqueeze(s)
-	}
-
-	posOne, posTwo := 0, len(s)-1
-	tokenOne, tokenTwo, resp = moveLeftSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
-	if tokenOne == nil && tokenTwo == nil {
-		return resp
-	}
-
-	tokenOne, tokenTwo, resp = moveRightSide(s, tokenOne, tokenTwo, &posOne, &posTwo)
-	if tokenOne == nil && tokenTwo == nil {
-		return resp
-	}
-	return internalMatcher(s[posOne:posTwo+1], tokenOne, tokenTwo)
+	return internalMatcher(s, lToken, rToken)
 }
 
-func moveLeftSide(s string, firstToken, lastToken *token, posFirst, posLast *int) (*token, *token, bool) {
-	startPosition := firstToken.prev.copy()
+func moveLeftSide(s string, lToken, rToken *token) (string, *token, *token, bool) {
+	lPos, rPos := 0, len(s)-1
+	startPosition := lToken.prev.copy()
 
 	for {
-		if !firstToken.one {
-			return firstToken, lastToken, false
+		if !lToken.single {
+			return s[lPos : rPos+1], lToken, rToken, false
 		}
 
-		if *posFirst > *posLast {
-			return nil, nil, firstToken.ballast(lastToken)
+		if lPos > rPos {
+			return "", nil, nil, lToken.ballast(rToken)
 		}
 
-		if *posFirst >= 0 && firstToken.snuffOutPrev(s[*posFirst]) {
-			*posFirst++
+		if lPos >= 0 && lToken.snuffOutPrev(s[lPos]) {
+			lPos++
 			continue
 		}
 
-		if firstToken == lastToken {
-			return nil, nil, firstToken.matchSqueeze(s[*posFirst : *posLast+1])
+		if lToken == rToken {
+			return "", nil, nil, lToken.matchSqueeze(s[lPos : rPos+1])
 		}
 
-		if firstToken.equal(s[*posFirst]) {
-			*posFirst++
-			firstToken = firstToken.next
+		if lToken.equal(s[lPos]) {
+			lPos++
+			lToken = lToken.next
 			continue
 		}
 
-		if startPosition != nil && startPosition.equal(s[*posFirst]) {
-			*posFirst++
-			firstToken = startPosition.next
+		if startPosition != nil && startPosition.equal(s[lPos]) {
+			lPos++
+			lToken = startPosition.next
 			continue
 		}
-		return nil, nil, false
+		return "", nil, nil, false
 	}
 }
 
-func moveRightSide(s string, firstToken, lastToken *token, posFirst, posLast *int) (*token, *token, bool) {
-	endPosition := lastToken.next.copy()
+func moveRightSide(s string, lToken, rToken *token) (string, *token, *token, bool) {
+	lPos, rPos := 0, len(s)-1
+	endPosition := rToken.next.copy()
 
 	for {
-		if !lastToken.one {
-			return firstToken, lastToken, false
+		if !rToken.single {
+			return s[lPos : rPos+1], lToken, rToken, false
 		}
 
-		if *posFirst > *posLast {
-			return nil, nil, firstToken.ballast(lastToken)
+		if lPos > rPos {
+			return "", nil, nil, lToken.ballast(rToken)
 		}
 
-		if *posLast < len(s) && lastToken.snuffOutNext(s[*posLast]) {
-			*posLast--
+		if rPos < len(s) && rToken.snuffOutNext(s[rPos]) {
+			rPos--
 			continue
 		}
 
-		if firstToken == lastToken {
-			return nil, nil, firstToken.matchSqueeze(s[*posFirst : *posLast+1])
+		if lToken == rToken {
+			return "", nil, nil, lToken.matchSqueeze(s[lPos : rPos+1])
 		}
 
-		if lastToken.equal(s[*posLast]) {
-			*posLast--
-			lastToken = lastToken.prev
+		if rToken.equal(s[rPos]) {
+			rPos--
+			rToken = rToken.prev
 			continue
 		}
 
-		if endPosition != nil && endPosition.equal(s[*posLast]) {
-			*posLast--
-			lastToken = endPosition.prev
+		if endPosition != nil && endPosition.equal(s[rPos]) {
+			rPos--
+			rToken = endPosition.prev
 			continue
 		}
 
-		return nil, nil, false
+		return "", nil, nil, false
 	}
 }
 
 func (t *token) stealNextValue() {
-	if t.next.getSymbol() != nil && !t.one {
+	if t != nil && t.next != nil && t.next.getSymbol() != nil && !t.single {
 		if *t.next.getSymbol() == anySymbol {
 			t.value = anySymbol
 		}
@@ -174,7 +142,7 @@ func (t *token) stealNextValue() {
 }
 
 func (t *token) stealPrevValue() {
-	if t.prev.getSymbol() != nil && !t.one {
+	if t != nil && t.prev != nil && t.prev.getSymbol() != nil && !t.single {
 		if *t.prev.getSymbol() == anySymbol {
 			t.value = anySymbol
 		}
@@ -185,49 +153,48 @@ func (t *token) stringValue() string {
 	if t == nil {
 		return "null"
 	}
-	if t.one {
+	if t.single {
 		return string(t.value)
 	}
 	return string(t.value) + string(anyCount)
 }
 
 func (t *token) matchSqueeze(in string) bool {
-	fmt.Println(t.prev.stringValue(), t.stringValue(), t.next.stringValue(), in)
-
+	fmt.Println(in)
 	var (
-		prevToken, nextToken  *token
-		first                 int
-		last                  = len(in)
-		firstStuck, lastStuck bool
+		prevToken, nextToken *token
+		lPos                 int
+		rPos                 = len(in)
+		lStuck, rStuck       bool
 	)
 
-	if t.prev != nil && !t.prev.one {
+	if t.prev != nil && !t.prev.single {
 		prevToken = t.prev.copy()
 	}
 
-	if t.next != nil && !t.next.one {
+	if t.next != nil && !t.next.single {
 		nextToken = t.next.copy()
 	}
 
 	if prevToken == nil {
-		firstStuck = true
+		lStuck = true
 	}
 	if nextToken == nil {
-		lastStuck = true
+		rStuck = true
 	}
 
 	for {
-		if last-first == 1 && t.one {
-			return t.equal(in[first])
+		if rPos-lPos == 1 && t.single {
+			return t.equal(in[lPos])
 		}
-		if last == first && !t.one {
+		if rPos == lPos && !t.single {
 			return true
 		}
-		if firstStuck && lastStuck {
-			if t.one {
+		if lStuck && rStuck {
+			if t.single {
 				return false
 			}
-			for i := first; i < last; i++ {
+			for i := lPos; i < rPos; i++ {
 				if !t.equal(in[i]) {
 					return false
 				}
@@ -235,108 +202,108 @@ func (t *token) matchSqueeze(in string) bool {
 			return true
 		}
 
-		if !firstStuck && !t.equal(in[first]) {
-			if prevToken.equal(in[first]) {
-				first++
+		if !lStuck && !t.equal(in[lPos]) {
+			if prevToken.equal(in[lPos]) {
+				lPos++
 			} else {
-				firstStuck = true
+				lStuck = true
 			}
 			continue
 		}
 
-		if !lastStuck && !t.equal(in[last-1]) {
-			if nextToken.equal(in[last-1]) {
-				last--
+		if !rStuck && !t.equal(in[rPos-1]) {
+			if nextToken.equal(in[rPos-1]) {
+				rPos--
 			} else {
-				lastStuck = true
+				rStuck = true
 			}
 			continue
 		}
 
-		if !firstStuck {
-			if t.one {
-				if first+1 < len(in) {
-					if !prevToken.equal(in[first+1]) {
-						firstStuck = true
+		if !lStuck {
+			if t.single {
+				if lPos+1 < len(in) {
+					if !prevToken.equal(in[lPos+1]) {
+						lStuck = true
 						continue
 					}
 				}
 			}
 
-			if prevToken.equal(in[first]) {
-				first++
+			if prevToken.equal(in[lPos]) {
+				lPos++
 			} else {
-				firstStuck = true
+				lStuck = true
 			}
 			continue
 		}
 
-		if !lastStuck {
-			if t.one {
-				if last-1 > 0 {
-					if !nextToken.equal(in[last-2]) {
-						lastStuck = true
+		if !rStuck {
+			if t.single {
+				if rPos-1 > 0 {
+					if !nextToken.equal(in[rPos-2]) {
+						rStuck = true
 						continue
 					}
 				}
 			}
 
-			if nextToken.equal(in[last-1]) {
-				last--
+			if nextToken.equal(in[rPos-1]) {
+				rPos--
 			} else {
-				lastStuck = true
+				rStuck = true
 			}
 			continue
 		}
 	}
 }
 
-func regularExprToTokens(input string) (firstToken, lastToken *token) {
+func regularExprToTokens(input string) (lToken, rToken *token) {
 	currentToken := &token{}
 	for i := len(input) - 1; i >= 0; i-- {
 		if input[i] == anyCount {
 			currentToken.prev = &token{
-				one:   false,
-				value: input[i-1],
-				next:  currentToken,
+				single: false,
+				value:  input[i-1],
+				next:   currentToken,
 			}
 			i--
 		} else {
 			currentToken.prev = &token{
-				one:   true,
-				value: input[i],
-				next:  currentToken,
+				single: true,
+				value:  input[i],
+				next:   currentToken,
 			}
 		}
 		currentToken = currentToken.prev
 		if currentToken.next.value == 0 {
-			lastToken = currentToken
+			rToken = currentToken
 		}
 	}
-	return currentToken, lastToken
+	return currentToken, rToken
 }
 
 type token struct {
-	one        bool
+	single     bool
 	value      uint8
 	prev       *token
 	next       *token
 	snuffedOut int
 }
 
-func (t *token) ballast(lastToken *token) bool {
+func (t *token) ballast(rToken *token) bool {
 	tok := t.copy()
-	if tok == nil && lastToken == nil {
+	if tok == nil && rToken == nil {
 		return false
 	}
 	counter := 0
 	for {
 		counter += tok.snuffedOut
-		if tok.one && counter == 0 {
+		if tok.single && counter == 0 {
 			return false
 		}
 		counter--
-		if tok == lastToken {
+		if tok == rToken {
 			return true
 		}
 		tok = tok.next
@@ -367,7 +334,7 @@ func (t *token) getSymbol() *uint8 {
 	if t == nil {
 		return nil
 	}
-	if t.one {
+	if t.single {
 		return nil
 	}
 	return &t.value
@@ -380,7 +347,7 @@ func (t *token) printReg() (resp string) {
 			return resp
 		}
 		symbol := ""
-		if !tCopy.one {
+		if !tCopy.single {
 			symbol = "*"
 		}
 		resp += string(tCopy.value) + symbol
@@ -393,7 +360,7 @@ func (t *token) copy() *token {
 		return nil
 	}
 	return &token{
-		one:        t.one,
+		single:     t.single,
 		value:      t.value,
 		prev:       t.prev,
 		next:       t.next,
@@ -402,7 +369,7 @@ func (t *token) copy() *token {
 }
 
 func (t *token) snuffOutPrev(symbol uint8) bool {
-	if t == nil || t.value != anySymbol || t.prev == nil || t.prev.one || !t.prev.equal(symbol) {
+	if t == nil || t.value != anySymbol || t.prev == nil || t.prev.single || !t.prev.equal(symbol) {
 		return false
 	}
 	t.snuffedOut++
@@ -410,9 +377,26 @@ func (t *token) snuffOutPrev(symbol uint8) bool {
 }
 
 func (t *token) snuffOutNext(symbol uint8) bool {
-	if t == nil || t.value != anySymbol || t.next == nil || t.next.one || !t.next.equal(symbol) {
+	if t == nil || t.value != anySymbol || t.next == nil || t.next.single || !t.next.equal(symbol) {
 		return false
 	}
 	t.snuffedOut++
+	return true
+}
+
+func (t *token) getWeight() (weight int) {
+	if !t.single {
+		weight += 100
+	}
+	if t.value == anySymbol {
+		weight += 10
+	}
+	return weight
+}
+
+func priorityIsLeft(lToken, rToken *token) bool {
+	if lToken.getWeight() > rToken.getWeight() {
+		return false
+	}
 	return true
 }
