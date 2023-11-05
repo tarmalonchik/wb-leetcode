@@ -1,17 +1,9 @@
 package main
 
-import (
-	"fmt"
-)
-
 const (
 	anySymbol = '.'
 	anyCount  = '*'
 )
-
-func main() {
-	fmt.Println(isMatch("aaaaaaaaaaaaaaaaaaab", "a*a*a*a*a*a*a*a*a*a*"))
-}
 
 func isMatch(s string, p string) (resp bool) {
 	lToken := regularExprToTokens(p)
