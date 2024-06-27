@@ -4,17 +4,6 @@ import (
 	"fmt"
 )
 
-func main() {
-	node := &TreeNode{
-		Val: -2,
-		Right: &TreeNode{
-			Val: -3,
-		},
-	}
-
-	fmt.Println(pathSum(node, -5))
-}
-
 type TreeNode struct {
 	Val   int
 	Left  *TreeNode
