@@ -1,17 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
-func main() {
-	some := []int{}
-	root := generateListNode(some)
-	tree := sortedListToBST(root)
-
-	fmt.Println(tree.Left.Right.Val)
-}
-
 type ListNode struct {
 	Val  int
 	Next *ListNode
