@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 type TreeNode struct {
 	Val   int
 	Left  *TreeNode
@@ -76,8 +72,6 @@ func pathSum(root *TreeNode, targetSum int) [][]int {
 		}
 
 		if root.Right != nil {
-			fmt.Println("here")
-
 			root = root.Right
 			localResp = append(localResp, root.Val)
 			localSum += root.Val
