@@ -1,14 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
-func main() {
-	input := []int{2, 7, 9, 3, 1}
-	fmt.Println(rob(input))
-}
-
 func rob(nums []int) int {
 	s := storage{}
 	for i := range nums {
