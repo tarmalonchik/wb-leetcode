@@ -1,124 +1,141 @@
 package main
 
-func canCompleteCircuit(gas []int, cost []int) int {
-	vals, positions := groupPositiveAndNegatives(gas, cost)
-	return findTheBestPosition(nexter(vals), positions)
-}
+import (
+	"strconv"
+)
 
-func findTheBestPosition(in nexter, positions []int) int {
-	if len(in) == 0 {
-		return -1
+func evalRPN(tokens []string) int {
+	stackItem := newStack(len(tokens))
+
+	for i := len(tokens) - 1; i >= 0; i-- {
+		currentItem := newItem(tokens[i])
+		if currentItem.isOperator() {
+			stackItem.add(currentItem)
+			continue
+		}
+		stackLast, ok := stackItem.get(0)
+		if ok && stackLast.isOperator() {
+			stackItem.add(currentItem)
+			continue
+		}
+
+		stackItem.add(currentItem)
+		stackItem.tryToCompute()
 	}
 
-	pos := 0
-	maxVal := 0
 	for {
-		maxVal += in[pos]
-		prevPos := pos
-		_, pos = in.Next(pos)
-		if prevPos >= pos {
-			if maxVal < 0 {
-				return -1
-			}
-			break
+		if !stackItem.tryToCompute() {
+			val, _ := stackItem.get(0)
+			return val.value
 		}
-	}
-
-	startPos := 0
-	pos = startPos
-	maxVal = 0
-	for {
-		maxVal += in[pos]
-		if maxVal < 0 {
-			_, startPos = in.Next(startPos)
-			pos = startPos
-			maxVal = 0
-		} else {
-			_, pos = in.Next(pos)
-			if pos == startPos {
-				if maxVal >= 0 {
-					return positions[pos]
-				} else {
-					return -1
-				}
-			}
-		}
-
 	}
 }
 
-func groupPositiveAndNegatives(gas []int, cost []int) (vals grouped, positions []int) {
-	if len(gas) == 0 {
-		return nil, nil
-	}
+const multiple = uint8(1)
+const divide = uint8(2)
+const sum = uint8(3)
+const dec = uint8(4)
 
-	vals = make(grouped, 0, len(gas))
-	positions = make([]int, 0, len(gas))
-
-	for i := range gas {
-		hadSwitch := vals.addItem(gas[i] - cost[i])
-		if hadSwitch {
-			if (gas[i] - cost[i]) >= 0 {
-				positions = append(positions, i)
-			} else {
-				positions = append(positions, -1)
-			}
-		}
-	}
-
-	if len(vals) == 1 {
-		return vals, positions
-	}
-
-	if vals[0] <= 0 && vals[len(vals)-1] <= 0 {
-		vals[0] += vals[len(vals)-1]
-		return vals[:len(vals)-1], positions[:len(positions)-1]
-	}
-	if vals[0] > 0 && vals[len(vals)-1] > 0 {
-		vals[len(vals)-1] += vals[0]
-		return vals[1:], positions[1:]
-	}
-
-	return vals, positions
+type item struct {
+	operator uint8
+	value    int
 }
 
-type nexter []int
-
-func (n *nexter) Next(currentPos int) (val, pos int) {
-	if len(*n) == 0 {
-		return 0, -1
+func (i item) apply(val, val2 int) int {
+	switch i.operator {
+	case multiple:
+		return val * val2
+	case divide:
+		return val / val2
+	case dec:
+		return val - val2
+	case sum:
+		return val + val2
 	}
-	if currentPos >= len(*n) {
-		return 0, -1
-	}
-	if currentPos == len(*n)-1 {
-		return (*n)[0], 0
-	}
-	return (*n)[currentPos+1], currentPos + 1
+	panic("invalid operator")
 }
 
-type grouped []int
+func (i item) isOperator() bool {
+	return i.operator != 0
+}
 
-func (g *grouped) addItem(num int) (hadSwitch bool) {
-	if len(*g) == 0 {
-		*g = append(*g, num)
-		return true
+func newItem(in string) item {
+	switch in {
+	case "*":
+		return item{operator: multiple}
+	case "/":
+		return item{operator: divide}
+	case "-":
+		return item{operator: dec}
+	case "+":
+		return item{operator: sum}
 	}
-	if (*g)[len(*g)-1] <= 0 {
-		if num <= 0 {
-			(*g)[len(*g)-1] += num
-			return false
-		} else {
-			*g = append(*g, num)
-			return true
-		}
-	} else {
-		if num <= 0 {
-			*g = append(*g, num)
-			return true
-		} else {
-			(*g)[len(*g)-1] += num
-			return false
-		}
+	val, err := strconv.Atoi(in)
+	if err != nil {
+		panic("invalid number")
 	}
+	return item{value: val}
+}
+
+func newStack(maxCount int) stack {
+	return stack{
+		currentIndex: -1,
+		items:        make([]item, maxCount),
+	}
+}
+
+type stack struct {
+	currentIndex int
+	items        []item
+}
+
+func (s *stack) tryToCompute() bool {
+	val, ok := s.get(0)
+	if !ok {
+		return false
+	}
+	if val.isOperator() {
+		return false
+	}
+
+	val2, ok := s.get(1)
+	if !ok {
+		return false
+	}
+	if val2.isOperator() {
+		return false
+	}
+
+	operator, ok := s.get(2)
+	if !ok {
+		return false
+	}
+	if !operator.isOperator() {
+		return false
+	}
+
+	s.remove(2)
+	s.add(item{value: operator.apply(val.value, val2.value)})
+	s.tryToCompute()
+	return true
+}
+
+func (s *stack) add(in item) {
+	s.currentIndex++
+	s.items[s.currentIndex] = in
+}
+
+func (s *stack) get(offset int) (val item, ok bool) {
+	if s.currentIndex-offset < 0 {
+		return item{}, false
+	}
+	return s.items[s.currentIndex-offset], true
+}
+
+func (s *stack) remove(offset int) bool {
+	if s.currentIndex-offset < 0 {
+		return false
+	}
+	s.currentIndex -= 1 + offset
+	return true
 }
