@@ -1,13 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
-func main() {
-	fmt.Println(canConstruct("1", "1"))
-}
-
 func addToMap(mp map[uint8]uint32, val uint8) {
 	mp[val]++
 }
