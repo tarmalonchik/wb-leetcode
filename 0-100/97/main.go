@@ -1,134 +1,97 @@
 package main
 
-import (
-	"fmt"
-)
-
-func main() {
-	//s1 := "abababababababababababababababababababababababababababababababababababababababababababababababababbb"
-	//s2 := "babababababababababababababababababababababababababababababababababababababababababababababababaaaba"
-	//s3 := "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababbb"
-
-	s1 := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-	s2 := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-	s3 := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-
-	fmt.Println(isInterleave(s1, s2, s3))
-}
-
-type chain struct {
-	s1pos, s2pos, s3pos int
-	nextItem            *chain
-}
-
-func addHeadToChain(c *chain, s1pos, s2pos, s3pos int) *chain {
-	if c == nil {
-		return &chain{
-			s1pos: s1pos,
-			s2pos: s2pos,
-			s3pos: s3pos,
-		}
-	}
-
-	newItem := &chain{
-		s1pos: s1pos,
-		s2pos: s2pos,
-		s3pos: s3pos,
-	}
-	newItem.nextItem = c
-	return newItem
-}
-
 func isInterleave(s1 string, s2 string, s3 string) bool {
-	var head *chain
-	secondTrack := false
+	mp := make(mpManager, len(s1)*len(s2))
 
-	if s1 == "" {
-		return s2 == s3
+	if len(s1)+len(s2) != len(s3) {
+		return false
 	}
-	if s2 == "" {
-		return s1 == s3
+	return recursive(mp, s1, s2, s3, 0, 0)
+}
+
+func recursive(mp mpManager, s1 string, s2 string, s3 string, pos1, pos2 int) bool {
+	if pos1 == len(s1) && pos2 == len(s2) {
+		return true
 	}
-	if s3 == "" {
-		return s1 == "" && s2 == ""
-	}
 
-	s1pos := 0
-	s2pos := 0
-	s3pos := 0
-
-	for {
-		if (s3pos > len(s3)-1) || (s1pos > len(s1)-1) || (s2pos > len(s2)-1) {
-			if checkIfValid(s1, s2, s3, s1pos, s2pos, s3pos) {
-				return true
+	if pos1 == len(s1) {
+		if s2[pos2] == s3[pos1+pos2] {
+			val, ok := mp.get(pos1, pos2+1)
+			if ok {
+				return val
 			}
-
-			if head != nil {
-				secondTrack = true
-				head, s1pos, s2pos, s3pos = getFromHead(head)
-				continue
-			}
-			return false
-		}
-
-		if s1[s1pos] == s2[s2pos] {
-			if s3[s3pos] != s1[s1pos] {
-				if head == nil {
-					return false
-				}
-
-				secondTrack = true
-
-				head, s1pos, s2pos, s3pos = getFromHead(head)
-				continue
-			}
-			if !secondTrack {
-				head = addHeadToChain(head, s1pos, s2pos, s3pos)
-			}
-			s3pos++
-			if !secondTrack {
-				s1pos++
-				continue
-			}
-			s2pos++
-			secondTrack = false
-			continue
-		}
-
-		if s1[s1pos] == s3[s3pos] {
-			s1pos++
-			s3pos++
-			continue
-		}
-		if s2[s2pos] == s3[s3pos] {
-			s2pos++
-			s3pos++
-			continue
-		}
-
-		if head != nil {
-			secondTrack = true
-			head, s1pos, s2pos, s3pos = getFromHead(head)
-			continue
+			newVal := recursive(mp, s1, s2, s3, pos1, pos2+1)
+			mp.set(pos1, pos2+1, newVal)
+			return newVal
 		}
 		return false
 	}
+
+	if pos2 == len(s2) {
+		if s1[pos1] == s3[pos1+pos2] {
+			val, ok := mp.get(pos1+1, pos2)
+			if ok {
+				return val
+			}
+			newVal := recursive(mp, s1, s2, s3, pos1+1, pos2)
+			mp.set(pos1+1, pos2, newVal)
+			return newVal
+		}
+		return false
+	}
+
+	var a, b bool
+
+	if s1[pos1] == s3[pos1+pos2] {
+		val, ok := mp.get(pos1+1, pos2)
+		if ok {
+			a = val
+		} else {
+			newVal := recursive(mp, s1, s2, s3, pos1+1, pos2)
+			mp.set(pos1+1, pos2, newVal)
+			a = newVal
+		}
+	}
+
+	if a == true {
+		return a
+	}
+
+	if s2[pos2] == s3[pos1+pos2] {
+		val, ok := mp.get(pos1, pos2+1)
+		if ok {
+			b = val
+		} else {
+			newVal := recursive(mp, s1, s2, s3, pos1, pos2+1)
+			mp.set(pos1, pos2+1, newVal)
+			b = newVal
+		}
+	}
+
+	return b
 }
 
-func getFromHead(head *chain) (newHead *chain, s1, s2, s3 int) {
-	s1, s2, s3 = head.s1pos, head.s2pos, head.s3pos
-	return head.nextItem, s1, s2, s3
+type mpItem struct {
+	pos1 uint16
+	pos2 uint16
 }
 
-func checkIfValid(s1, s2, s3 string, s1pos, s2pos, s3pos int) bool {
-	if s3pos > len(s3)-1 {
-		return s1pos > len(s1)-1 && s2pos > len(s2)-1
+type mpManager map[mpItem]bool
+
+func (m *mpManager) get(pos1, pos2 int) (value bool, ok bool) {
+	val, ok := (*m)[mpItem{
+		pos1: uint16(pos1),
+		pos2: uint16(pos2),
+	}]
+	if ok {
+		return val, true
 	}
-	if s1pos > len(s1)-1 {
-		return s3[s3pos:] == s2[s2pos:]
-	}
-	if s2pos > len(s2)-1 {
-		return s3[s3pos:] == s1[s1pos:]
-	}
-	return false
+	return false, false
+}
+
+func (m *mpManager) set(pos1, pos2 int, value bool) {
+	(*m)[mpItem{
+		pos1: uint16(pos1),
+		pos2: uint16(pos2),
+	}] = value
 }
