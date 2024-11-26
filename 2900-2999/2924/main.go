@@ -8,6 +8,10 @@ func findChampion(n int, edges [][]int) int {
 		return -1
 	}
 
+	if n-len(edges) > 1 {
+		return -1
+	}
+
 	mp := make(map[int]int, n)
 
 	for i := 0; i < n; i++ {
