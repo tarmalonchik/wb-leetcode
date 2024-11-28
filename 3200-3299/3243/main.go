@@ -65,9 +65,8 @@ func (g *GraphTop) process(n int) {
 
 func (d *DataHolder) fill(n int) {
 	var currentTop *GraphTop
-	var totalMinVal int
 
-	totalMinVal = -1
+	totalMinVal := -1
 
 	for i := 0; i < n; i++ {
 		if currentTop == nil {
