@@ -11,15 +11,232 @@ func minimumObstacles(grid [][]int) int {
 		return counter(grid)
 	}
 
-	dataHolder := &DataHolder{}
-	dataHolder.fill(grid)
-	dataHolder.process(dataHolder.graph)
-
-	val := dataHolder.graph[len(grid)-1][len(grid[0])-1]
-	if val.ShortestPath == -1 {
-		return *val.TotalMinVal
+	totalMinVal := countNegativeCaseDistance(0, 0, len(grid[0])-1, len(grid))
+	dataHolder := &DataHolder{
+		grid:          grid,
+		totalMinVal:   &totalMinVal,
+		firstPriority: &Deque{},
+		lastPriority:  &Deque{},
+		distanceMp:    make(distanceMap, len(grid[0])*len(grid)),
 	}
-	return val.ShortestPath
+	dataHolder.distanceMp.set(0, 0, grid[0][0])
+	dataHolder.firstPriority.PushFront(0, 0)
+	dataHolder.process()
+
+	val := dataHolder.distanceMp.getShortest(len(grid[0])-1, len(grid)-1)
+	if val == -1 {
+		return totalMinVal
+	}
+	return val
+}
+
+type DataHolder struct {
+	grid          [][]int
+	firstPriority *Deque
+	lastPriority  *Deque
+	distanceMp    distanceMap
+	totalMinVal   *int
+}
+
+func (d *DataHolder) getMaxX() int {
+	return len(d.grid[0]) - 1
+}
+
+func (d *DataHolder) getMaxY() int {
+	return len(d.grid) - 1
+}
+
+func (d *DataHolder) process() {
+	for {
+		nextPos1, nextPos2, valid := d.firstPriority.GetFront()
+		if !valid {
+			nextPos1, nextPos2, valid = d.lastPriority.GetFront()
+			if !valid {
+				return
+			}
+		}
+		d.processOneItem(nextPos1, nextPos2)
+		if *d.totalMinVal == 0 {
+			return
+		}
+	}
+}
+
+func (d *DataHolder) processOneItem(pos1, pos2 int) {
+	topShortestPath := d.distanceMp.getShortest(pos1, pos2)
+
+	if topShortestPath >= *d.totalMinVal {
+		return
+	}
+
+	maxX := d.getMaxX()
+	maxY := d.getMaxY()
+
+	minNegative := countNegativeCaseDistance(pos1, pos2, maxX, maxY) + topShortestPath
+
+	if minNegative < *d.totalMinVal {
+		*d.totalMinVal = minNegative
+	}
+
+	if childPos1, childPos2, ok := d.GetLeft(pos1, pos2); ok {
+		if ok := d.processParentChildRelation(pos1, pos2, childPos1, childPos2); ok {
+			if d.grid[childPos2][childPos1] == 0 {
+				d.firstPriority.PushTail(childPos1, childPos2)
+			} else {
+				d.lastPriority.PushTail(childPos1, childPos2)
+			}
+		}
+	}
+
+	if childPos1, childPos2, ok := d.GetUp(pos1, pos2); ok {
+		if ok := d.processParentChildRelation(pos1, pos2, childPos1, childPos2); ok {
+			if d.grid[childPos2][childPos1] == 0 {
+				d.firstPriority.PushTail(childPos1, childPos2)
+			} else {
+				d.lastPriority.PushTail(childPos1, childPos2)
+			}
+		}
+	}
+
+	if childPos1, childPos2, ok := d.GetDown(pos1, pos2); ok {
+		if ok := d.processParentChildRelation(pos1, pos2, childPos1, childPos2); ok {
+			if d.grid[childPos2][childPos1] == 0 {
+				d.firstPriority.PushTail(childPos1, childPos2)
+			} else {
+				d.lastPriority.PushTail(childPos1, childPos2)
+			}
+		}
+	}
+	if childPos1, childPos2, ok := d.GetRight(pos1, pos2); ok {
+		if ok := d.processParentChildRelation(pos1, pos2, childPos1, childPos2); ok {
+			if d.grid[childPos2][childPos1] == 0 {
+				d.firstPriority.PushTail(childPos1, childPos2)
+			} else {
+				d.lastPriority.PushTail(childPos1, childPos2)
+			}
+		}
+	}
+}
+
+func (d *DataHolder) processParentChildRelation(topPos1, topPos2, childPos1, childPos2 int) bool {
+	nextTopDistance := d.grid[childPos2][childPos1]
+	childShortestPath := d.distanceMp.getShortest(childPos1, childPos2)
+	topShortestPath := d.distanceMp.getShortest(topPos1, topPos2)
+
+	if childShortestPath == -1 {
+		childShortestPath = topShortestPath + nextTopDistance
+		d.distanceMp.set(childPos1, childPos2, childShortestPath)
+		if childShortestPath >= *d.totalMinVal {
+			return false
+		}
+		return true
+	}
+
+	if childShortestPath > topShortestPath+nextTopDistance {
+		childShortestPath = topShortestPath + nextTopDistance
+		d.distanceMp.set(childPos1, childPos2, childShortestPath)
+		if childShortestPath >= *d.totalMinVal {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+func countNegativeCaseDistance(pos1, pos2, maxPos1, maxPos2 int) int {
+	return (maxPos2 - pos2) + (maxPos1 - pos1)
+}
+
+func (d *DataHolder) GetRight(pos1, pos2 int) (int, int, bool) {
+	if pos1 < len(d.grid[0])-1 {
+		return pos1 + 1, pos2, true
+	}
+	return 0, 0, false
+}
+
+func (d *DataHolder) GetLeft(pos1, pos2 int) (int, int, bool) {
+	if pos1 > 0 {
+		return pos1 - 1, pos2, true
+	}
+	return 0, 0, false
+}
+
+func (d *DataHolder) GetDown(pos1, pos2 int) (int, int, bool) {
+	if pos2 < len(d.grid)-1 {
+		return pos1, pos2 + 1, true
+	}
+	return 0, 0, false
+}
+
+func (d *DataHolder) GetUp(pos1, pos2 int) (int, int, bool) {
+	if pos2 > 0 {
+		return pos1, pos2 - 1, true
+	}
+	return 0, 0, false
+}
+
+type Deque struct {
+	Head *Node
+	Tail *Node
+}
+
+func (d *Deque) GetFront() (int, int, bool) {
+	out := d.Head
+	if d.Head != nil {
+		d.Head = d.Head.Next
+		if d.Head == nil {
+			d.Tail = nil
+		}
+	}
+	if out != nil {
+		return out.Position.Pos1, out.Position.Pos2, true
+	}
+	return 0, 0, false
+}
+
+func (d *Deque) PushFront(pos1, pos2 int) {
+	if d.Head == nil && d.Tail == nil {
+		d.Head = &Node{
+			Position: Position{
+				Pos1: pos1,
+				Pos2: pos2,
+			},
+		}
+		d.Tail = d.Head
+		return
+	}
+	d.Head = &Node{
+		Position: Position{
+			Pos1: pos1,
+			Pos2: pos2,
+		},
+		Next: d.Head,
+	}
+}
+
+func (d *Deque) PushTail(pos1, pos2 int) {
+	if d.Head == nil && d.Tail == nil {
+		d.Head = &Node{
+			Position: Position{
+				Pos1: pos1,
+				Pos2: pos2,
+			},
+		}
+		d.Tail = d.Head
+		return
+	}
+	d.Tail.Next = &Node{
+		Position: Position{
+			Pos1: pos1,
+			Pos2: pos2,
+		},
+	}
+	d.Tail = d.Tail.Next
+}
+
+type Node struct {
+	Position Position
+	Next     *Node
 }
 
 func counter(grid [][]int) (out int) {
@@ -46,207 +263,26 @@ func counter(grid [][]int) (out int) {
 	return out
 }
 
-type DataHolder struct {
-	graph [][]*GraphTop
+type Position struct {
+	Pos1, Pos2 int
 }
 
-func (d *DataHolder) process(grid [][]*GraphTop) {
-	if grid[0][0].Distance {
-		d.graph[0][0].ShortestPath = 1
-	} else {
-		d.graph[0][0].ShortestPath = 0
+type distanceMap map[Position]int
+
+func (m *distanceMap) getShortest(pos1, pos2 int) int {
+	val, ok := (*m)[Position{
+		Pos1: pos1,
+		Pos2: pos2,
+	}]
+	if ok {
+		return val
 	}
-	d.graph[0][0].process(grid, len(grid[0])-1, len(grid)-1)
+	return -1
 }
 
-func countNegativeCaseDistance(pos1, pos2, maxPos1, maxPos2 int) int {
-	return (maxPos2 - pos2) + (maxPos1 - pos1)
-}
-
-func (g *GraphTop) process(grid [][]*GraphTop, maxX, maxY int) {
-	minNegative := countNegativeCaseDistance(g.Pos1, g.Pos2, maxX, maxY) + g.ShortestPath
-
-	if minNegative < *g.TotalMinVal {
-		*g.TotalMinVal = minNegative
-	}
-
-	if g.Next == nil {
-		g.Next = &Deque{}
-
-		left := g.GetLeft(grid, maxX, maxY)
-		if left != nil {
-			if left.Distance {
-				g.Next.PushTail(left)
-			} else {
-				g.Next.PushFront(left)
-			}
-		}
-
-		up := g.GetUp(grid, maxX, maxY)
-		if up != nil {
-			if up.Distance {
-				g.Next.PushTail(up)
-			} else {
-				g.Next.PushFront(up)
-			}
-		}
-
-		down := g.GetDown(grid, maxX, maxY)
-		if down != nil {
-			if down.Distance {
-				g.Next.PushTail(down)
-			} else {
-				g.Next.PushFront(down)
-			}
-		}
-
-		right := g.GetRight(grid, maxX, maxY)
-		if right != nil {
-			if right.Distance {
-				g.Next.PushTail(right)
-			} else {
-				g.Next.PushFront(right)
-			}
-		}
-	}
-
-	for nextTop := g.Next.GetFront(); nextTop != nil; nextTop = g.Next.GetFront() {
-		nextTopDistance := 0
-		if grid[nextTop.Pos2][nextTop.Pos1].Distance {
-			nextTopDistance = 1
-		}
-
-		if nextTop.ShortestPath == -1 {
-			nextTop.ShortestPath = g.ShortestPath + nextTopDistance
-			if nextTop.ShortestPath >= *g.TotalMinVal {
-				continue
-			}
-			nextTop.process(grid, maxX, maxY)
-			continue
-		}
-
-		if nextTop.ShortestPath > g.ShortestPath+nextTopDistance {
-			nextTop.ShortestPath = g.ShortestPath + nextTopDistance
-			if nextTop.ShortestPath >= *g.TotalMinVal {
-				continue
-			}
-			nextTop.process(grid, maxX, maxY)
-		}
-	}
-}
-
-func (g *GraphTop) GetRight(grid [][]*GraphTop, maxX, maxY int) *GraphTop {
-	if g.Pos1 < maxX {
-		return grid[g.Pos2][g.Pos1+1]
-	}
-	return nil
-}
-
-func (g *GraphTop) GetLeft(grid [][]*GraphTop, maxX, maxY int) *GraphTop {
-	if g.Pos1 > 0 {
-		return grid[g.Pos2][g.Pos1-1]
-	}
-	return nil
-}
-
-func (g *GraphTop) GetDown(grid [][]*GraphTop, maxX, maxY int) *GraphTop {
-	if g.Pos2 < maxY {
-		return grid[g.Pos2+1][g.Pos1]
-	}
-	return nil
-}
-
-func (g *GraphTop) GetUp(grid [][]*GraphTop, maxX, maxY int) *GraphTop {
-	if g.Pos2 > 0 {
-		return grid[g.Pos2-1][g.Pos1]
-	}
-	return nil
-}
-
-func (d *DataHolder) fill(grid [][]int) {
-	totalMinVal := countNegativeCaseDistance(0, 0, len(grid[0])-1, len(grid)-1)
-
-	d.graph = make([][]*GraphTop, len(grid))
-	d.graph[0] = make([]*GraphTop, len(grid[0]))
-	for yPos := range grid {
-		if yPos+1 <= len(grid)-1 {
-			d.graph[yPos+1] = make([]*GraphTop, len(grid[0]))
-		}
-
-		for xPos := range grid[yPos] {
-			if d.graph[yPos][xPos] == nil {
-				d.graph[yPos][xPos] = &GraphTop{
-					Distance:     grid[yPos][xPos] == 1,
-					ShortestPath: -1,
-					TotalMinVal:  &totalMinVal,
-					Pos1:         xPos,
-					Pos2:         yPos,
-				}
-			}
-		}
-	}
-}
-
-type GraphTop struct {
-	Pos1         int
-	Pos2         int
-	Distance     bool
-	ShortestPath int
-	TotalMinVal  *int
-	Next         *Deque
-}
-
-type Deque struct {
-	Head       *Node
-	Tail       *Node
-	CurrentPos *Node
-}
-
-func (d *Deque) GetFront() *GraphTop {
-	out := d.CurrentPos
-	if out == nil {
-		d.CurrentPos = d.Head
-	} else {
-		d.CurrentPos = d.CurrentPos.Next
-	}
-	if out != nil {
-		return out.Val
-	}
-	return nil
-}
-
-func (d *Deque) PushFront(top *GraphTop) {
-	if d.Head == nil && d.Tail == nil {
-		d.Head = &Node{
-			Val: top,
-		}
-		d.CurrentPos = d.Head
-		d.Tail = d.Head
-		return
-	}
-	d.Head = &Node{
-		Val:  top,
-		Next: d.Head,
-	}
-	d.CurrentPos = d.Head
-}
-
-func (d *Deque) PushTail(top *GraphTop) {
-	if d.Head == nil && d.Tail == nil {
-		d.Head = &Node{
-			Val: top,
-		}
-		d.CurrentPos = d.Head
-		d.Tail = d.Head
-		return
-	}
-	d.Tail.Next = &Node{
-		Val: top,
-	}
-	d.Tail = d.Tail.Next
-}
-
-type Node struct {
-	Val  *GraphTop
-	Next *Node
+func (m *distanceMap) set(pos1, pos2 int, shortestDistance int) {
+	(*m)[Position{
+		Pos1: pos1,
+		Pos2: pos2,
+	}] = shortestDistance
 }
