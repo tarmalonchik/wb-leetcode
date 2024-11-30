@@ -43,6 +43,7 @@ type primeNumbersCounter struct {
 	numbers []int16
 }
 
+// https://ru.wikipedia.org/wiki/Решето_Эратосфена
 func newPrimeNumbersCounter(maxNum int) *primeNumbersCounter {
 	if maxNum < 2 {
 		maxNum = 2
